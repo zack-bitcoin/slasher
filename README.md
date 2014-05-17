@@ -23,9 +23,9 @@ The only secure method so far.
 
 blocklength: Each block requires the burning of a certain percentage of all coins. The total number of coins has a half-life number of blocks. Perhaps every 20,000 blocks, the total number of money gets decreased in half. Length is measured in total number of coins. Less coins means it is a longer chain.
 
-security: A N coin transaction isn't secure until it is buried under at least N coins of length. It is incredibly expensive to make 
+security: A N coin transaction isn't secure until it is buried under at least N coins of length.
 
-drawbacks: If a person spends 100 N coin transactions in the same block, the recipients might think it is secure after only N length, but it really requires 100xN length. Double-spend is too easy.
+drawbacks: If a person spends 100 N coin transactions in the same block, the recipients might think it is secure after only N length, but it really requires 100xN length. Double-spend is far too easy. It resembles how double-spend would work in a perfectly liquid market for mining hardware.
 
 ===POS consensus via representative democracy
 
@@ -33,9 +33,9 @@ blocklength: The number of times the representatives selected (signed on) this p
 
 security: A transactions isn't secure until it is buried under enough signatures that a fork becomes improbable.
 
-drawbacks: Long-range attack. If you mine a ton of blocks, eventually you have control of all the pieces to hand-select the POS signers. You can select yourself as signer every single time. This attack is very profitable because you collect so many blockrewards.
-
 nothing-at-stake: All POS besides slasher suffer this problem. Signers have incentive to sign on every fork that has even the smallest possibility of being the legitimate chain. The real chain gets lost among the many copies.
+
+drawbacks: Long-range attack. If you mine a ton of blocks, eventually you have control of all the pieces to hand-select the POS signers. You can select yourself as signer every single time. This attack is very profitable because you collect so many blockrewards.
 
 ===hash-slinging-slasher POS+POB
 
@@ -47,7 +47,7 @@ The real chain can only afford to build blocks because he collects so many trans
 
 hash-slinging-slasher does not suffer the nothing-at-stake problem, because it borrows the punitive measures from slasher.
 
-This might be the first consensus securing algorithm that requires zero pow.
+This might be the first consensus securing algorithm that requires zero pow. There is no longer a set blocktime. Instead, new blocks are created as soon as there are enough transactions to make it profitable.
 
 
 1) http://blog.ethereum.org/2014/01/15/slasher-a-punitive-proof-of-stake-algorithm/
