@@ -21,7 +21,7 @@ The only secure method so far.
 
 ### POB(proof of burn) consensus
 
-blocklength: Each block requires the burning of a certain percentage of all coins. The total number of coins has a half-life number of blocks. Perhaps every 20,000 blocks, the total number of money gets decreased in half. Length is measured in total number of coins. Less coins means it is a longer chain.
+blocklength: Each block requires the burning of a certain percentage of all coins, which causes the total number of coins to decrease exponanetially according to a half-life. Length is measured by how many coins were burned to produce the chain.
 
 security: A N coin transaction isn't secure until it is buried under at least N coins of length.
 
