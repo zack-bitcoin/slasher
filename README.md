@@ -29,9 +29,9 @@ blocklength: Each block requires the burning of a certain percentage of all coin
 
 security: A N coin transaction isn't secure until it is buried under at least N coins of length.
 
-drawbacks: If a person spends 100 N coin transactions in the same block, the recipients might think it is secure after only N length, but it really requires 100xN length. Double-spend is far too easy. It resembles how double-spend would work in a perfectly liquid market for mining hardware.
+drawbacks: If a person spends 100 N coin transactions in the same block, the recipients might think it is secure after only N length, but it really requires 100xN length. It resembles how double-spend would work in a perfectly liquid market for mining hardware. Spend 100xblock_reward in a single block, then spend 2xblock_reward to create a longer fork, and get all your money back.
 
-### POS consensus via representative democracy
+### POS consensus
 
 blocklength: The number of times the representatives signed this particular chain. Length is measured in signatures.
 
@@ -39,7 +39,7 @@ security: A transactions isn't secure until it is buried under enough signatures
 
 drawbacks: Long-range attack. If you mine a ton of blocks, eventually you have control of all the pieces to hand-select the POS signers. You can select yourself as signer every single time. This attack is very profitable because you collect so many blockrewards.
 
-nothing-at-stake. All POS besides slasher suffer this problem. Signers have incentive to sign on every fork that has even the smallest possibility of being the legitimate chain. The real chain gets lost among the many copies.
+nothing-at-stake. All pure POS systems have this problem. POW+POS like slasher systems avoid this problem. Signers have incentive to sign on every fork that has even the smallest possibility of being the legitimate chain. The real chain gets lost among the many copies.
 
 ### hash-slinging-slasher POS+POB
 
