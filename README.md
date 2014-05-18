@@ -53,7 +53,7 @@ hash-slinging-slasher does not suffer the nothing-at-stake problem, because it b
 
 There is no longer a set blocktime. Instead, new blocks are created as soon as there are enough transactions to make it profitable.
 
-
+our POS method: Everyone has the priviledge to puchase a bond for any length of time. They can only withdraw the bond on a single chain. we will use the slasher-style punitive measures if they try to withdraw it on more than one fork.
 
 ### links
 
