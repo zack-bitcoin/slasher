@@ -9,14 +9,12 @@ def main(dic, DB):
         else:
             #we could add security freatures here.
             return {'bool':True, 'newdic':dic}
-            
     def blockCount(dic, DB):
         length=DB['length']
         if length>=0:
             return {'length':length, 'recentHash':DB['recentHash'], 'sigLength':0} 
         else:
             return {'length':-1, 'recentHash':0, 'sigLength':DB['sigLength']}
-            
     def rangeRequest(dic, DB):
         ran=dic['range']
         out=[]
@@ -45,12 +43,6 @@ def main(dic, DB):
     check=security_check(dic)
     if not check['bool']:
         return check
-    #try:
     return funcs[dic['type']](check['newdic'], DB)
-#    except:
-#        return {'error':'error123', 'bad dic':str(dic), 'check':check}
-
-#def server(DB): return networking.serve_forever(main, custom.listen_port, DB)
-#def g(dic): return main(dic, DB)
 def g(DB): return (lambda dic: main(dic, DB))
 def server(DB): return http_server.serve(custom.listen_port, g(DB), g(DB))

@@ -70,8 +70,6 @@ def peers_check(dic):
         block_count = cmd({'type': 'blockCount'})
         print('block count: ' +str(block_count))
         if type(block_count) != type({'a': 1}):
-            #print(str(type(block_count)))
-            #print(str(block_count))
             return
         if 'error' in block_count.keys():
             print('error 2')
@@ -93,24 +91,6 @@ def suggestions(DB):
     DB['suggested_blocks'] = []
 def mainloop(peers, DB):
     while True:
-        #       if DB['length']<2000:
-        '''
-            import gui
-            secret=str(random.random())
-            tx={'type':'sign', 'secret_hash':tools.det_hash(secret), 'pubkeys':[custom.pubkey], 'sign_on':DB['length']-3}
-            gui.easy_add_transaction(tx, custom.privkey, DB)
-            '''
-        #gui.make_block(custom.pubkey, custom.privkey, DB)
-        print('mainloop'+str(peers))
         peers_check({'peers':peers, 'DB':DB})
-        #tools.tryPass(peers_check, {'peers':peers, 'DB':DB})
-        
         tools.tryPass(suggestions, DB)
         time.sleep(2)
-'''
-def miner(reward_address, peers, DB):
-    while True:
-        tools.tryPass(mine, {'reward_address':reward_address,
-                            'DB':DB})
-        time.sleep(1)
-'''

@@ -16,12 +16,10 @@ def signatures_check(tx):
     tx_copy=copy.deepcopy(tx)
     tx_copy.pop('signatures')
     msg=tools.det_hash(tx_copy)
-    print(' in sig check: ' +str(tx))
     if not sigs_match(tx['signatures'], tx['pubkeys'], msg): 
         print('bad sig')
         return False
     return True
-
 def spend_verify(tx, txs, DB): 
     tx_copy_2=copy.deepcopy(tx)
     if len(tx['pubkeys'])==0: return False
@@ -33,13 +31,10 @@ def spend_verify(tx, txs, DB):
         if Tx['type']=='spend':
             total_cost+=Tx['amount']
     return int(blockchain.db_get(address, DB)['amount'])>=total_cost
-
 def census_verify(tx, txs, DB):
     if not signatures_check(tx): return False
     return True
-
 def sign_verify(tx, txs, DB):
-    #print('tx: ' +str(tx))
     if not tools.E_check(tx, 'sign_on', int):
         print('no sign on')
         return False
@@ -68,10 +63,6 @@ def sign_verify(tx, txs, DB):
         'secrets':tools.recent_blockthings('secrets', DB, tx['sign_on']-2000, tx['sign_on']-1900)})
     balance=blockchain.db_get(address, DB, 'db_old')['amount']
     target=tools.target_times_float('f'*64, 64*balance/DB['all_money'])
-    
-    print('DB: ' +str(DB))
-    print('target: ' +str(target))
-    print('hash: ' +str(a))
     size=max(len(a), len(target))
     if tools.buffer_(a, size)>=tools.buffer_(target, size):
         print('6')
@@ -100,14 +91,12 @@ def slasher_verify(tx, txs, DB):
     if tools.addr(tx['tx1'])!=tools.addr(tx['tx2']): return False
     if tx['tx1']['sign_on'] != tx['tx2']['sign_on']: return False
     return True
-
 tx_check={'spend':spend_verify, 
           'sign':sign_verify, 
           'reveal_secret':reveal_secret_verify, 
           'slasher':slasher_verify, 
           'census':census_verify}####
 #------------------------------------------------------
-
 def adjust_int(key, pubkey, amount, DB):
     acc=blockchain.db_get(pubkey, DB)
     n=0
@@ -141,18 +130,13 @@ def reveal_secret(tx, DB):
     adjust_int('amount', address, custom.pos_reward, DB)
     adjust_list('secret_hashes', tx['sign_on'], True, secret(tx), DB)
     adjust_list('secrets', tx['sign_on'], False, tx['secret'], DB)
-    
 def slasher(tx, DB):
     address=tools.addr(tx)
     criminal=tools.addr(tx['tx1'])
     adjust_int('amount', criminal, custom.pos_reward/3, DB)
     adjust_list('secret_hashes', tx['tx1']['sign_on'], False, tx['secret_hash'], DB)
-
 def census(tx, DB):
     pass
-
-
-
 update={'spend':spend,
         'sign':sign,
         'reveal_secret':reveal_secret,

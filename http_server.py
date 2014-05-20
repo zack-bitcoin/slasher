@@ -16,12 +16,12 @@ def serve(port, get, post):
             self.send_response(200)
             self.send_header('Content-type',    'text/html')
             self.end_headers()
-            dic=self.path[1:]
-            dic=dic.decode('hex')
-            dic=zlib.decompress(dic)
-#            except:
-#                self.wfile.write('error:' + str(self.path))
-#                return
+            try:
+                dic=self.path[1:]
+                dic=dic.decode('hex')
+                dic=zlib.decompress(dic)
+            except:
+                dic={}
             self.wfile.write(get(dic))
         def do_POST(self):
             print("path: " + str(self.path))
@@ -43,9 +43,3 @@ def serve(port, get, post):
     print "Serving HTTP on", sa[0], "port", sa[1], "..."
     httpd.serve_forever()
 empty_page='<html>{}</html>'
-def g():
-    return empty_page.format('<p>success</p>')
-def p(dic):
-    print('here')
-    return empty_page
-#serve(8099, g, p)

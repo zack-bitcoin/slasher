@@ -14,23 +14,6 @@ def kill_processes_using_ports(ports):
         if match:
             pid = match.group('pid')
             subprocess.Popen(['kill', '-9', pid])
-'''
-def serve_forever(message_handler_func, PORT, queue):
-    server = socket.socket()
-    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server.bind(('127.0.0.1', PORT))
-    server.listen(100)
-    while True:
-        client, addr = server.accept()
-        (ip, port) = addr
-        data = client.recv(MAX_MESSAGE_SIZE)
-        #we could insert security checks here
-        try:
-            data=tools.unpackage(data)
-            client.send(tools.package(message_handler_func(data, queue)))
-        except: pass
-'''
-
 def connect(msg, host, port):
     #print('in connect')
     string='http://{}:{}/'.format(host, str(port))
@@ -39,26 +22,6 @@ def connect(msg, host, port):
     url=urllib.urlopen(string)
     #print('url: ' +str(url))
     return url.read()
-'''
-def connect(msg, host, port):
-    if len(msg)<1 or len(msg)>MAX_MESSAGE_SIZE:
-        print('wrong sized message')
-        return
-    s = socket.socket()
-    try:
-        s.settimeout(2)
-        s.connect((str(host), int(port)))
-        msg['version']=custom.version
-        s.send(tools.package(msg))
-        response = s.recv(MAX_MESSAGE_SIZE)
-        #print(response)
-        return tools.unpackage(response)
-    except Exception as e:
-        #print('THE ERROR WAS: ' +str(e))
-        #print('disconnect')
-        return {'error':'error'}
-'''
 def send_command(peer, msg): 
-    #print('in send command: '+str(msg))
     msg['version']=custom.version
     return connect(tools.package(msg), peer[0], peer[1])

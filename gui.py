@@ -6,7 +6,6 @@ def make_block(pubkey, privkey, DB):
     tx={'type':'spend', 'pubkeys':[pubkey], 'to':'none', 'amount':0, 'fee':10**8, 'count':blockchain.count_func(tools.make_address([custom.pubkey], 1), DB)}
     easy_add_transaction(tx, privkey, DB)
     block=consensus.make_block(pubkey, DB)
-    #print('block: ' +str(block))
     blockchain.add_block(block, DB)
 
 def spend(amount, pubkey, privkey, to_pubkey, DB):
@@ -16,7 +15,6 @@ def spend(amount, pubkey, privkey, to_pubkey, DB):
 
 def easy_add_transaction(tx_orig, privkey, DB):
     tx=copy.deepcopy(tx_orig)
-    #print('easy_add: ' +str(tx))
     pubkey=tools.privtopub(privkey)
     address=tools.make_address([pubkey], 1)
     try:
@@ -24,7 +22,6 @@ def easy_add_transaction(tx_orig, privkey, DB):
     except:
         tx['count']=1
     tx['signatures']=[tools.sign(tools.det_hash(tx), privkey)]
-    #print('CREATED TX: ' +str(tx))
     blockchain.add_tx(tx, DB)
 
 submit_form='''

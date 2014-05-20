@@ -22,6 +22,7 @@ To quickly run 5 nodes (linux/mac only)
 
 Then send your browser to 
 
+    http://localhost:8700 <---- this one has the money
     http://localhost:8701
     http://localhost:8702
     http://localhost:8703
