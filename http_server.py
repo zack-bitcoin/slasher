@@ -1,4 +1,5 @@
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+import zlib, cgi
 
 def serve(port, get, post):
     def fs2dic(fs):
@@ -15,7 +16,13 @@ def serve(port, get, post):
             self.send_response(200)
             self.send_header('Content-type',    'text/html')
             self.end_headers()
-            self.wfile.write(get())
+            dic=self.path[1:]
+            dic=dic.decode('hex')
+            dic=zlib.decompress(dic)
+#            except:
+#                self.wfile.write('error:' + str(self.path))
+#                return
+            self.wfile.write(get(dic))
         def do_POST(self):
             print("path: " + str(self.path))
             ctype, pdict = cgi.parse_header(self.headers.getheader('content-type'))    
@@ -41,4 +48,4 @@ def g():
 def p(dic):
     print('here')
     return empty_page
-serve(8099, g, p)
+#serve(8099, g, p)
