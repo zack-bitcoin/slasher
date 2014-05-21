@@ -40,7 +40,7 @@ def easyForm(link, button_says, moreHtml='', typee='post'):
 
 linkHome = easyForm('/', 'HOME', '', 'get')
 
-def page1(DB, dic):
+def page1(dic):
     out=empty_page
     txt='<input type="text" name="BrainWallet" value="{}">'
     out=out.format(easyForm('/home', 'Play Go!', txt.format(custom.brainwallet)))
