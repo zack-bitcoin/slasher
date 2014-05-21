@@ -21,42 +21,27 @@ def db_get(n, DB, db='db'):
 def db_put(key, dic, DB, db='db'): return DB[db].Put(str(key), tools.package(dic))
 def db_delete(key, DB, db='db'): return DB[db].Delete(str(key))
 
-def count_func(address, DB): # Returns the number of transactions that pubkey has broadcast.
-    def zeroth_confirmation_txs(address, DB):
-        return len(filter(lambda tx: address==tools.addr(tx), DB['txs']))
-    current = db_get(address, DB)['count']
-    return current+zeroth_confirmation_txs(address, DB)
-
 def add_tx(tx, DB): # Attempt to add a new transaction into the pool.
     if DB['db']==DB['db_old']: return
     address = tools.addr(tx)
-    def verify_count(tx, txs): 
-        if not tools.E_check(tx, 'count', int): 
-            return False
-        address=tools.addr(tx)
-        if tx['count'] != count_func(address, DB):
-            return False
-        return True
-    def tx_type_check(tx, txs): return not isinstance(tx, dict)
     def type_check(tx, txs):
-        if 'type' not in tx:
-            return True
-        return tx['type'] not in transactions.tx_check
+        if not tools.E_check(tx, 'type', str): return False
+        if tx['type'] not in transactions.tx_check: return False
+        return True
     def too_big_block(tx, txs):
         return len(tools.package(txs+[tx])) > networking.MAX_MESSAGE_SIZE - 5000
-    def verify_tx(tx, txs):
-        if type_check(tx, txs): 
+    def verify_tx(tx, DB):
+        txs=DB['txs']
+        if not type_check(tx, txs): 
             print('type')
             return False
-        '''
-        if tx in txs: 
-            print('already have')
-            return False'''
         if len(filter(lambda t: tools.addr(t)==tools.addr(tx), 
                       filter(lambda t: t['count']==tx['count'], txs)))>0:
             print('already have')
             return False
-        if not verify_count(tx, txs): 
+        if not tools.verify_count(tx, DB): 
+            print('tx: ' +str(tx))
+            print('DB: ' +str(DB))
             print('count')
             return False
         if too_big_block(tx, txs): 
@@ -65,16 +50,13 @@ def add_tx(tx, DB): # Attempt to add a new transaction into the pool.
         if 'start' in tx and DB['length'] < tx['start']: return False
         if 'end' in tx and DB['length'] > tx['end']: return False
         return transactions.tx_check[tx['type']](tx, txs, DB)
-    #print('try add tx: ' +str(tx))
-    if verify_tx(tx, DB['txs']):
+    if verify_tx(tx, DB):
         print('add tx: ' +str(tx))
         DB['txs'].append(tx)
     else:
         print('TX DID NOT GET ADDED: ' +str(tx))
-E_check=tools.E_check
 def bothchains(DB, func, block):
     func(block, DB)
-    #print('in bothchains')
     if DB['length']>2000:
         DB['db_new']=DB['db']
         DB['db']=DB['db_old']
@@ -94,7 +76,7 @@ def add_block_(block, DB):
         if 'error' in block:
             return False
         def tx_check(block, DB):
-            if not E_check(block, 'txs', list): return False
+            if not tools.E_check(block, 'txs', list): return False
             start = copy.deepcopy(DB['txs'])
             out = []
             start_copy = []
@@ -104,9 +86,15 @@ def add_block_(block, DB):
                 if transactions.tx_check[start[-1]['type']](start[-1], out, DB):
                     out.append(start.pop())
                 else: return False  # Block is invalid
-        def fee_check(block, DB): return tools.sumFees(block)>=custom.create_block_fee
+        def fee_check(block, DB): 
+            '''
+            print('in fee check')
+            print('sumfees: ' +str(tools.sumFees(block)))
+            print('convert: ' +str(tools.coins2satoshis(custom.create_block_fee, DB)))
+            print('block: ' +str(block))'''
+            return tools.sumFees(block)>=tools.coins2satoshis(custom.create_block_fee, DB)
         def length_check(block, DB):
-            if not E_check(block, 'length', DB['length']+1): return False
+            if not tools.E_check(block, 'length', DB['length']+1): return False
             return True
         def reference_previous_block(block, DB):
             if DB['length'] >= 0:#first block is first.
@@ -131,15 +119,12 @@ def add_block_(block, DB):
         for tx in block['txs']:
             DB['add_block']=True
             transactions.update[tx['type']](copy.deepcopy(tx), DB)
-    #print('trying to add: ' +str(block))
     if block_check(block, DB):
         print('add_block: ' + str(block))
         orphans = copy.deepcopy(DB['txs'])
         update(block, DB)
         secret=str(random.random())
         tx={'type':'sign', 'secret_hash':tools.make_address([secret], 1), 'pubkeys':[custom.pubkey], 'sign_on':DB['length']-3}
-        #tx['signatures']=[tools.sign(tools.det_hash(tx), custom.privkey)]
-        #print('making sign tx: ' +str(tx))
         gui.easy_add_transaction(tx, custom.privkey, DB)
         for tx in orphans:
             add_tx(tx, DB)

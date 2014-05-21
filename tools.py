@@ -1,4 +1,4 @@
-import pt, hashlib, blockchain
+import pt, hashlib, blockchain, custom
 from json import dumps as package, loads as unpackage
 #def pub2addr(pubkey): return pt.pubtoaddr(pubkey)
 def sign(msg, privkey): return pt.ecdsa_sign(msg, privkey)
@@ -54,7 +54,6 @@ def E_check(dic, key, type_):
         if not dic[key] == type_: return False
     return True
 def target_times_float(target, number):
-    print('number: ' +str(number))
     a = int(str(target), 16)
     b = int(a * number)
     return str(hex(b))[2: -1]
@@ -68,8 +67,19 @@ def tryPass(func, dic):
     try: func(dic)
     except: pass
 def median(mylist):  # the liars don't have 51% hashpower.
-    if len(mylist) < 1:
-        return 0
-    return sorted(mylist)[len(mylist) / 2]
-
+    return 0 if len(mylist) < 1 else sorted(mylist)[len(mylist) / 2]
+def count_func(address, DB): # Returns the number of transactions that pubkey has broadcast.
+    def zeroth_confirmation_txs(address, DB):
+        return len(filter(lambda tx: address==addr(tx), DB['txs']))
+    current = blockchain.db_get(address, DB)['count']
+    return current+zeroth_confirmation_txs(address, DB)
+def verify_count(tx, DB): 
+    if not E_check(tx, 'count', int): return False
+    address=addr(tx)
+    if tx['count'] != count_func(address, DB): return False
+    return True
+def satoshis2coins(satoshis, DB):
+    return satoshis*1.0*custom.total_coins/DB['all_money']
+def coins2satoshis(coins, DB):
+    return int(coins*DB['all_money']/custom.total_coins)
 

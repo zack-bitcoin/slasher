@@ -22,8 +22,7 @@ def signatures_check(tx):
     return True
 def spend_verify(tx, txs, DB): 
     tx_copy_2=copy.deepcopy(tx)
-    if not tools.E_check(tx, 'fee', int): 
-        return False
+    if not tools.E_check(tx, 'fee', int): return False
     if tx['fee']<custom.min_fee: return False
     if len(tx['pubkeys'])==0: return False
     if len(tx['signatures'])>len(tx['pubkeys']): return False
