@@ -3,14 +3,14 @@ import copy, tools, blockchain, custom, http_server, consensus
 #the html it creates. It creates a very simple page that allows you to spend 
 #money.
 def make_block(pubkey, privkey, DB):
-    tx={'type':'spend', 'pubkeys':[pubkey], 'to':'none', 'amount':0, 'fee':10**8, 'count':blockchain.count_func(tools.make_address([custom.pubkey], 1), DB)}
+    tx={'type':'spend', 'pubkeys':[pubkey], 'to':'none', 'amount':0, 'fee':10**8}
     easy_add_transaction(tx, privkey, DB)
     block=consensus.make_block(pubkey, DB)
     blockchain.add_block(block, DB)
 
 def spend(amount, pubkey, privkey, to_pubkey, DB):
-    amount=int(amount*(10**5))
-    tx={'type':'spend', 'pubkeys':[pubkey], 'amount':amount, 'to':to_pubkey, 'fee':0}
+    amount=int(amount)*(10**5)
+    tx={'type':'spend', 'pubkeys':[pubkey], 'amount':amount, 'to':to_pubkey, 'fee':custom.min_fee}
     easy_add_transaction(tx, privkey, DB)
 
 def easy_add_transaction(tx_orig, privkey, DB):
@@ -25,7 +25,7 @@ def easy_add_transaction(tx_orig, privkey, DB):
     blockchain.add_tx(tx, DB)
 
 submit_form='''
-<form name="first" action="{}" method="{}">
+<form style='display:inline;\n margin:0;\n padding:0;' name="first" action="{}" method="{}">
 <input type="submit" value="{}">{}
 </form> {}
 '''
@@ -40,10 +40,10 @@ def easyForm(link, button_says, moreHtml='', typee='post'):
 
 linkHome = easyForm('/', 'HOME', '', 'get')
 
-def page1(brainwallet=custom.brainwallet):
+def page1(DB, dic):
     out=empty_page
     txt='<input type="text" name="BrainWallet" value="{}">'
-    out=out.format(easyForm('/home', 'Play Go!', txt.format(brainwallet)))
+    out=out.format(easyForm('/home', 'Play Go!', txt.format(custom.brainwallet)))
     return out.format('')
 
 def home(DB, dic):
@@ -65,9 +65,9 @@ def home(DB, dic):
     balance=blockchain.db_get(address, DB)['amount']
     for tx in DB['txs']:
         if tx['type'] == 'spend' and tx['to'] == address:
-            if tools.E_check(tx, 'fee', int): balance -= tx['fee']
             balance += tx['amount']
         if tx['type'] == 'spend' and tx['pubkeys'][0] == pubkey:
+            if tools.E_check(tx, 'fee', int): balance -= tx['fee']
             balance -= tx['amount']
     out=out.format('<p>current balance is: ' +str(balance/100000.0)+'</p>{}')
     if balance>0:
@@ -76,13 +76,16 @@ def home(DB, dic):
         <input type="text" name="to" value="address to give to">
         <input type="text" name="amount" value="amount to spend">
         <input type="hidden" name="privkey" value="{}">'''.format(privkey)))    
+        out=out.format('<br>{}')
     if balance>=10**8:
         out=out.format(easyForm('/home', 'make block', '''
         <input type="hidden" name="do" value="make_block">
         <input type="hidden" name="privkey" value="{}">'''.format(privkey)))    
+        out=out.format('cost: '+str(custom.create_block_fee-tools.sumFees(DB))+'<br>{}')
     txt='''    <input type="hidden" name="privkey" value="{}">'''
     s=easyForm('/home', 'Refresh', txt.format(privkey))
-    return out.format(s)
+    out=out.format(s)
+    return out.format('')
 
 def hex2htmlPicture(string, size):
     txt='<img height="{}" src="data:image/png;base64,{}">{}'

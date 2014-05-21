@@ -1,5 +1,6 @@
 import tools#, hashlib
 #This is for easy customization of new currencies.
+min_fee=10**6#ignore txs with fee lower than this
 database_name='DB.db'
 listen_port=8900
 gui_port=8700

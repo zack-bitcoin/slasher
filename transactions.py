@@ -22,6 +22,9 @@ def signatures_check(tx):
     return True
 def spend_verify(tx, txs, DB): 
     tx_copy_2=copy.deepcopy(tx)
+    if not tools.E_check(tx, 'fee', int): 
+        return False
+    if tx['fee']<custom.min_fee: return False
     if len(tx['pubkeys'])==0: return False
     if len(tx['signatures'])>len(tx['pubkeys']): return False
     if not signatures_check(tx): return False
@@ -133,6 +136,7 @@ def reveal_secret(tx, DB):
 def slasher(tx, DB):
     address=tools.addr(tx)
     criminal=tools.addr(tx['tx1'])
+    adjust_int('count', address, 1, DB)
     adjust_int('amount', criminal, custom.pos_reward/3, DB)
     adjust_list('secret_hashes', tx['tx1']['sign_on'], False, tx['secret_hash'], DB)
 def census(tx, DB):

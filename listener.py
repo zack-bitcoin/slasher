@@ -2,6 +2,7 @@ import http_server, custom, tools, leveldb, blockchain
 #Sometimes peers ask us for information or push new transactions or blocks to
 #us. This file explains how we respond.
 def main(dic, DB):
+    print('listener')
     dic=tools.unpackage(dic)
     def security_check(dic):
         if 'version' not in dic or dic['version']!=custom.version:
@@ -12,9 +13,9 @@ def main(dic, DB):
     def blockCount(dic, DB):
         length=DB['length']
         if length>=0:
-            return {'length':length, 'recentHash':DB['recentHash'], 'sigLength':0} 
+            return tools.package({'length':length, 'recentHash':DB['recentHash'], 'sigLength':DB['sigLength']})
         else:
-            return {'length':-1, 'recentHash':0, 'sigLength':DB['sigLength']}
+            return tools.package({'length':-1, 'recentHash':0, 'sigLength':DB['sigLength']})
     def rangeRequest(dic, DB):
         ran=dic['range']
         out=[]
@@ -24,8 +25,8 @@ def main(dic, DB):
             if 'length' in block:
                 out.append(block)
             counter+=1
-        return out
-    def txs(dic, DB): return DB['txs']
+        return tools.package(out)
+    def txs(dic, DB): return tools.package(DB['txs'])
     def pushtx(dic, DB): 
         DB['suggested_txs'].append(dic['tx'])
         return 'success'

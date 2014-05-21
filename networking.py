@@ -18,10 +18,13 @@ def connect(msg, host, port):
     #print('in connect')
     string='http://{}:{}/'.format(host, str(port))
     string+=zlib.compress(msg).encode('hex')
-    print('string: ' +str(string))
-    url=urllib.urlopen(string)
-    #print('url: ' +str(url))
-    return url.read()
+    try:
+        url=urllib.urlopen(string)
+        #print('url: ' +str(url))
+        return tools.unpackage(url.read())
+    except:
+        print('ERROR: ' + str(string))
+        return {'error':string}
 def send_command(peer, msg): 
     msg['version']=custom.version
     return connect(tools.package(msg), peer[0], peer[1])

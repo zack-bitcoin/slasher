@@ -21,11 +21,11 @@ todo=[
 #blocks and transactions.
     #[consensus.miner, 
     # (custom.pubkey, custom.peers, custom.hashes_per_check, DB), True],
+    [listener.server, (DB, ), True],
     [consensus.mainloop, 
      (custom.peers, DB), True],
 #listens for peers. Peers might ask us for our blocks and our pool of recent 
 #transactions, or peers could suggest blocks and transactions to us.
-    [listener.server, (DB, ), True],
     [gui.main, (custom.gui_port, custom.brainwallet, DB), True]]
 networking.kill_processes_using_ports([str(custom.gui_port),
                                        str(custom.listen_port)])

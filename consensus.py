@@ -68,8 +68,9 @@ def peers_check(dic):
                  'block': blockchain.db_get(block_count['length'] + 1, DB)})
             return []
         block_count = cmd({'type': 'blockCount'})
-        print('block count: ' +str(block_count))
         if type(block_count) != type({'a': 1}):
+            print('type: ' +str(type(block_count)))
+            print('type error')
             return
         if 'error' in block_count.keys():
             print('error 2')
@@ -80,6 +81,7 @@ def peers_check(dic):
         if them < us:
             return give_block(peer, DB, block_count)
         if us == them:
+            print('EQUAL')
             return ask_for_txs(peer, DB)
         return download_blocks(peer, DB, block_count, length)
     for peer in peers:
@@ -91,6 +93,7 @@ def suggestions(DB):
     DB['suggested_blocks'] = []
 def mainloop(peers, DB):
     while True:
-        peers_check({'peers':peers, 'DB':DB})
+        #peers_check({'peers':peers, 'DB':DB})
+        tools.tryPass(peers_check, {'peers':peers, 'DB':DB})
         tools.tryPass(suggestions, DB)
         time.sleep(2)

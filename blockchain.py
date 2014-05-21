@@ -23,8 +23,7 @@ def db_delete(key, DB, db='db'): return DB[db].Delete(str(key))
 
 def count_func(address, DB): # Returns the number of transactions that pubkey has broadcast.
     def zeroth_confirmation_txs(address, DB):
-        def func(t): address == tools.addr(t)
-        return len(filter(func, DB['txs']))
+        return len(filter(lambda tx: address==tools.addr(tx), DB['txs']))
     current = db_get(address, DB)['count']
     return current+zeroth_confirmation_txs(address, DB)
 
@@ -34,6 +33,7 @@ def add_tx(tx, DB): # Attempt to add a new transaction into the pool.
     def verify_count(tx, txs): 
         if not tools.E_check(tx, 'count', int): 
             return False
+        address=tools.addr(tx)
         if tx['count'] != count_func(address, DB):
             return False
         return True
@@ -48,7 +48,12 @@ def add_tx(tx, DB): # Attempt to add a new transaction into the pool.
         if type_check(tx, txs): 
             print('type')
             return False
+        '''
         if tx in txs: 
+            print('already have')
+            return False'''
+        if len(filter(lambda t: tools.addr(t)==tools.addr(tx), 
+                      filter(lambda t: t['count']==tx['count'], txs)))>0:
             print('already have')
             return False
         if not verify_count(tx, txs): 
@@ -69,7 +74,7 @@ def add_tx(tx, DB): # Attempt to add a new transaction into the pool.
 E_check=tools.E_check
 def bothchains(DB, func, block):
     func(block, DB)
-    print('in bothchains')
+    #print('in bothchains')
     if DB['length']>2000:
         DB['db_new']=DB['db']
         DB['db']=DB['db_old']
@@ -88,10 +93,6 @@ def add_block_(block, DB):
             return False
         if 'error' in block:
             return False
-        def accumulate(data):
-            if len(data)==0: return 0
-            if len(data)==1: return data[0]
-            return accumulate([data[0]+data[1]]+data[2:])
         def tx_check(block, DB):
             if not E_check(block, 'txs', list): return False
             start = copy.deepcopy(DB['txs'])
@@ -103,11 +104,7 @@ def add_block_(block, DB):
                 if transactions.tx_check[start[-1]['type']](start[-1], out, DB):
                     out.append(start.pop())
                 else: return False  # Block is invalid
-        def fee_check(block, DB):
-            fees=[tx['fee'] if E_check(tx, 'fee', int) else 0 for tx in block['txs']]
-            #print('out of: '+str(block['txs']))
-            #print('fees: ' +str(fees))
-            return accumulate(fees)>=custom.create_block_fee
+        def fee_check(block, DB): return tools.sumFees(block)>=custom.create_block_fee
         def length_check(block, DB):
             if not E_check(block, 'length', DB['length']+1): return False
             return True
@@ -118,7 +115,7 @@ def add_block_(block, DB):
             return True
         def census_check(block, DB):
             census_txs=filter(lambda tx: tx['type']=='census', block['txs'])
-            total=accumulate(map(lambda x: blockchain.db_get(tools.addr(x))['amount'], census_txs))
+            total=tools.accumulate(map(lambda x: blockchain.db_get(tools.addr(x))['amount'], census_txs))
             return total>DB['all_money']*0.4
         tests=[length_check, reference_previous_block, tx_check, fee_check]
         if block['length']%1000==999: tests.append(census_check)
@@ -134,7 +131,7 @@ def add_block_(block, DB):
         for tx in block['txs']:
             DB['add_block']=True
             transactions.update[tx['type']](copy.deepcopy(tx), DB)
-    print('trying to add: ' +str(block))
+    #print('trying to add: ' +str(block))
     if block_check(block, DB):
         print('add_block: ' + str(block))
         orphans = copy.deepcopy(DB['txs'])

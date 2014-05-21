@@ -41,6 +41,11 @@ def recent_blockthings(key, DB, start, end):
             storage[leng] = blockchain.db_get(leng, DB)[key]
         return storage[leng]
     return map(get_val, range(start, end))
+def accumulate(data):
+    if len(data)==0: return 0
+    if len(data)==1: return data[0]
+    return accumulate([data[0]+data[1]]+data[2:])
+def sumFees(block): return accumulate([tx['fee'] if E_check(tx, 'fee', int) else 0 for tx in block['txs']])
 def E_check(dic, key, type_):
     if not key in dic: return False
     if isinstance(type_, type):
