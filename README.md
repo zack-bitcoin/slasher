@@ -1,7 +1,7 @@
-slasher
+hash-slinging-slasher
 =====================
 
-http://blog.ethereum.org/2014/01/15/slasher-a-punitive-proof-of-stake-algorithm/
+based on [slasher](http://blog.ethereum.org/2014/01/15/slasher-a-punitive-proof-of-stake-algorithm/)
 
 Donations: 1GbpRPE83Vjg73KFvTVZ4EnS2qNkiLY5TT
 
@@ -29,22 +29,22 @@ Then send your browser to
     http://localhost:8704
     http://localhost:8705
 
-===types of interactions that people can have with the coin:
+###types of interactions that users can have with the blockchain:
 
 1) If you own money, you can create valid transactions to spend it.
 
 2) Anyone can create a block, but at least 0.21 coins of fees are destroyed.
 
-3) People with money are selected at random to sign on blocks, for this they recieve a reward. (see slasher blog post)
+3) People with money are selected at random to sign on blocks, for this they recieve a reward. These signatures determine chain-length see [slasher](http://blog.ethereum.org/2014/01/15/slasher-a-punitive-proof-of-stake-algorithm/)
 
-4) If you catch a pos signer trying to sign 2 opposing forks, you can take his reward from him. (see slasher blog post)
+4) If you catch a pos signer trying to sign 2 opposing forks, you can take his reward from him. see [slasher](http://blog.ethereum.org/2014/01/15/slasher-a-punitive-proof-of-stake-algorithm/)
 
 (not yet implemented) 5) Several thousand people are in a seperate class from the rest of us. These people own a second type of money which is non-transferable. It was given to them on the genesis block. Every thousandth block of the blockchain is a census block. A census block requires at least 51% of the special class of people to sign it. Upon signing the census block, they recieve a reward.
 
 (not yet implemented) 6) If a member from the special class is ever caught signing competing census blocks, his special-money can be destroyed.
 
 
-===Types of attack, and why we are secure from them:
+###Types of attack, and why we are secure from them:
 
 1) simple double-spend. Spend a large amount of money in a single block, quickly mine 2 blocks to create a longer chain and un-spend your money.
 
