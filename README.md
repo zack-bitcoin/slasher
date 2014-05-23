@@ -39,9 +39,9 @@ Then send your browser to
 
 4) If you catch a pos signer trying to sign 2 opposing forks, you can take his reward from him. see [slasher](http://blog.ethereum.org/2014/01/15/slasher-a-punitive-proof-of-stake-algorithm/)
 
-(not yet implemented) 5) Several thousand people are in a seperate class from the rest of us. These people own a second type of money which is non-transferable. It was given to them on the genesis block. Every thousandth block of the blockchain is a census block. A census block requires at least 51% of the special class of people to sign it. Upon signing the census block, they recieve a reward.
+(not yet implemented) 5) Several thousand people are in a seperate class from the rest of us. These people own a second type of money which is non-transferable. It was given to them on the genesis block. Every thousandth block of the blockchain is a census block. A census block requires at least 2/3rds of the special class of people to sign it. Upon signing the census block, they recieve a reward.
 
-(not yet implemented) 6) If a member from the special class is ever caught signing competing census blocks, his special-money can be destroyed.
+(not yet implemented) 6) If a member from the special class is ever caught signing competing census blocks, his special-money can be destroyed. Once a census-singer signs a block, he is only allowed to sign children of that block from then on.
 
 
 ###Types of attack, and why we are secure from them:
@@ -57,3 +57,11 @@ Then send your browser to
 3) long-range double-spend. Spend a large amount of money in a single block, and then rebuild a massive amount of the chain to create a fork which is longer than the real chain. In slasher, if you create a long chain, eventually you get to the point where you know all the secrets. You are able to select who is the pos signer. If you own only 0.0001% of all money, you can still select youself as signer every time.
 
 * This cannot happen because there is a census block between when the pos signer is given duty, and when he performs his duty. You cannot create a census block without knowing 51% of the private keys controlling the non-transferable money. 
+
+4) reveal keys that control non-transferable money. When these keys are revealed, it suddenly becomes possible to commit long-range double-spend. 
+
+* If the same non-transferable money is used in conflicting ways, it destroys the contested money. If 1/3rd of non-transferable coins are destroyed, the blockchain freezes. It is possible to use this frozen blockchain to create or verify the creation of a new currency. 
+
+** Case 1: over 1/2 of non-transferable coins are still secure. Use proof-of-burn to allow people to choose which new currency they want to join, or create new currencies where everyone owns money in the same amounts as the destroyed currency.
+
+** Case 2: over 1/2 of non-transferable coins are revealed to adversaries. Can create new currencies where everyone owns money in the same amounts as the destroyed currency.
