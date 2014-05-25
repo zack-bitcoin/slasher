@@ -2,25 +2,19 @@ import copy, tools, blockchain, custom, http_server, consensus
 #the easiest way to understand this file is to try it out and have a look at 
 #the html it creates. It creates a very simple page that allows you to spend 
 #money.
-def make_block_cost(DB): return tools.coins2satoshis(custom.create_block_fee, DB)-tools.sumFees(DB)
+def make_block_cost(DB): return tools.coins2satoshis(custom.create_block_fee, DB)-tools.sum_fees(DB)
 def make_block(pubkey, privkey, DB):
     tx={'type':'spend', 'pubkeys':[pubkey], 'to':'none', 'amount':0, 'fee':make_block_cost(DB)}
-    easy_add_transaction(tx, privkey, DB)
+    print('make_block cost: ' +str(tx['fee']))
+    tools.sign_broadcast_tx(tx, privkey, DB)
     block=consensus.make_block(pubkey, DB)
     blockchain.add_block(block, DB)
 
 def spend(amount, pubkey, privkey, to_pubkey, DB):
     amount=tools.coins2satoshis(int(amount), DB)
     tx={'type':'spend', 'pubkeys':[pubkey], 'amount':amount, 'to':to_pubkey, 'fee':custom.min_fee}
-    easy_add_transaction(tx, privkey, DB)
+    tools.sign_broadcast_tx(tx, privkey, DB)
 
-def easy_add_transaction(tx_orig, privkey, DB):
-    tx=copy.deepcopy(tx_orig)
-    pubkey=tools.privtopub(privkey)
-    address=tools.make_address([pubkey], 1)
-    tx['count']=tools.count_func(address, DB)
-    tx['signatures']=[tools.sign(tools.det_hash(tx), privkey)]
-    blockchain.add_tx(tx, DB)
 
 submit_form='''
 <form style='display:inline;\n margin:0;\n padding:0;' name="first" action="{}" method="{}">

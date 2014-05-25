@@ -23,7 +23,7 @@ def connect(msg, host, port):
         #print('url: ' +str(url))
         return tools.unpackage(url.read())
     except:
-        print('ERROR: ' + str(string))
+        #print('ERROR: ' + str(string))
         return {'error':string}
 def send_command(peer, msg): 
     msg['version']=custom.version

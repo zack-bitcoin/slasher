@@ -1,21 +1,22 @@
-import pt, hashlib, blockchain, custom
+import pt, hashlib, blockchain, custom, copy
 from json import dumps as package, loads as unpackage
 #def pub2addr(pubkey): return pt.pubtoaddr(pubkey)
 def sign(msg, privkey): return pt.ecdsa_sign(msg, privkey)
 def verify(msg, sig, pubkey): return pt.ecdsa_verify(msg, sig, pubkey)
 def privtopub(privkey): return pt.privtopub(privkey)
-def block_hash(block):
-    block=copy.deepcopy(block)
-    block.pop('secrets')
-    block.pop('secret_hashes')
-    return det_hash(block)
+def multi_pop(x, l):
+    x=copy.deepcopy(x)
+    [x.pop(i) for i in l]
+    return x
 def det_hash(x):#deterministically takes sha256 of dict, list, int, or string
-    def det_list(l): return '[%s]' % ','.join(map(det, l))
+    def det_list(l): return '[%s]' % ','.join(map(det, sorted(l)))
     def det_dict(x): 
         list_=map(lambda p: det(p[0]) + ':' + det(p[1]), sorted(x.items()))
         return '{%s}' % ','.join(list_)
     def det(x): return {list: det_list, dict: det_dict}.get(type(x), str)(x)
-    return hashlib.sha256(det(x)).hexdigest()
+    return hashlib.sha256(det(unpackage(package(x)))).hexdigest()
+def block_hash(block): return det_hash(multi_pop(block, ['secrets, secret_hashes']))#these lists have to be removed, becuase det_hash 
+def tx_hash(tx): return det_hash(multi_pop(tx, ['signatures']))
 def base58_encode(num):
     num=int(num, 16)
     alphabet = '123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ'
@@ -30,7 +31,7 @@ def base58_encode(num):
     return encode
 
 secrets = {}
-def recent_blockthings(key, DB, start, end):
+def recent_blockthings(key, DB, start, end, step_size=1):
     # Grabs info from old blocks in range
     storage={}
     if key == 'secret':
@@ -40,18 +41,20 @@ def recent_blockthings(key, DB, start, end):
         if not leng in storage:
             storage[leng] = blockchain.db_get(leng, DB)[key]
         return storage[leng]
-    return map(get_val, range(start, end))
+    return map(get_val, range(start, end, step_size))
 def accumulate(data):
     if len(data)==0: return 0
     if len(data)==1: return data[0]
     return accumulate([data[0]+data[1]]+data[2:])
-def sumFees(block): return accumulate([tx['fee'] if E_check(tx, 'fee', int) else 0 for tx in block['txs']])
+def sum_fees(block): return accumulate([tx['fee'] if E_check(tx, 'fee', int) else 0 for tx in block['txs']])
 def E_check(dic, key, type_):
+    if not isinstance(type_, list): type_=[type_]
+    if len(type_)==0: return False#to end the recursion.
     if not key in dic: return False
-    if isinstance(type_, type):
-        if not isinstance(dic[key], type_): return False
+    if isinstance(type_[0], type):
+        if not isinstance(dic[key], type_[0]): return E_check(dic, key, type_[1:])
     else:
-        if not dic[key] == type_: return False
+        if not dic[key] == type_[0]: return E_check(dic, key, type_[1:])
     return True
 def target_times_float(target, number):
     a = int(str(target), 16)
@@ -74,12 +77,22 @@ def count_func(address, DB): # Returns the number of transactions that pubkey ha
     current = blockchain.db_get(address, DB)['count']
     return current+zeroth_confirmation_txs(address, DB)
 def verify_count(tx, DB): 
-    if not E_check(tx, 'count', int): return False
+    if not E_check(tx, 'count', int): 
+        return False
     address=addr(tx)
-    if tx['count'] != count_func(address, DB): return False
+    if tx['count'] != count_func(address, DB): 
+        return False
     return True
 def satoshis2coins(satoshis, DB):
     return satoshis*1.0*custom.total_coins/DB['all_money']
 def coins2satoshis(coins, DB):
     return int(coins*DB['all_money']/custom.total_coins)
+def sign_broadcast_tx(tx_orig, privkey, DB):
+    tx=copy.deepcopy(tx_orig)
+    pubkey=privtopub(privkey)
+    address=make_address([pubkey], 1)
+    tx['count']=count_func(address, DB)
+    tx['signatures']=[sign(det_hash(tx), privkey)]
+    #DB['suggested_txs'].append(tx)#maybe this line is bad
+    blockchain.add_tx(tx, DB)#maybe this line is better
 

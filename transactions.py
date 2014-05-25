@@ -1,4 +1,4 @@
-import blockchain, custom, copy, tools
+import blockchain, custom, copy, tools, Add_Block
 #This file explains how we tell if a transaction is valid or not, it explains 
 #how we update the system when new transactions are added to the blockchain.
 def signatures_check(tx):
@@ -13,9 +13,7 @@ def signatures_check(tx):
                     sigs2.remove(sig)
                     pubs2.remove(pub)
         return len(sigs2)==0
-    tx_copy=copy.deepcopy(tx)
-    tx_copy.pop('signatures')
-    msg=tools.det_hash(tx_copy)
+    msg=tools.tx_hash(tx)
     if not sigs_match(tx['signatures'], tx['pubkeys'], msg): 
         print('bad sig')
         return False
@@ -32,10 +30,8 @@ def spend_verify(tx, txs, DB):
     for Tx in filter(lambda t: address==tools.addr(t), [tx]+txs):
         if Tx['type']=='spend':
             total_cost+=Tx['amount']
+            total_cost+=Tx['fee']
     return int(blockchain.db_get(address, DB)['amount'])>=total_cost
-def census_verify(tx, txs, DB):
-    if not signatures_check(tx): return False
-    return True
 def sign_verify(tx, txs, DB):
     if not tools.E_check(tx, 'sign_on', int):
         print('no sign on')
@@ -49,8 +45,10 @@ def sign_verify(tx, txs, DB):
     if not signatures_check(tx): 
         print('3')
         return False
-    if not tools.E_check(tx, 'secret_hash', str): 
-        print('4')
+    if not tools.E_check(tx, 'secret_hash', [str, unicode]): 
+        #print('no secret hash')
+        #print('tx: ' +str(tx))
+        #print('4')
         return False
     if len(tx['secret_hash']) != 31: 
         print('5')
@@ -60,9 +58,13 @@ def sign_verify(tx, txs, DB):
         print('Each address can sign each block a maximum of 1 time')
         return False
     address=tools.addr(tx)
+    secrets=tools.recent_blockthings('secrets', DB, tx['sign_on']-2000, tx['sign_on']-1900)
+    secrets_={}#we need this to stay in the same order. det_hash normally uses sorted on lists.
+    for i in range(len(secrets)):
+        secrets_[str(i)]=secrets[i]
     a=tools.det_hash({'address': address,
                       'length': DB['length'],
-        'secrets':tools.recent_blockthings('secrets', DB, tx['sign_on']-2000, tx['sign_on']-1900)})
+                      'secrets':secrets_})
     balance=blockchain.db_get(address, DB, 'db_old')['amount']
     target=tools.target_times_float('f'*64, 64*balance/DB['all_money'])
     size=max(len(a), len(target))
@@ -93,12 +95,54 @@ def slasher_verify(tx, txs, DB):
     if tools.addr(tx['tx1'])!=tools.addr(tx['tx2']): return False
     if tx['tx1']['sign_on'] != tx['tx2']['sign_on']: return False
     return True
+    
+def check_point_verify(tx, txs, DB):
+    print('CHECK POINT VERIFY')
+    if not tools.E_check(tx, 'sign_on', int):
+        print('no sign on')
+        return False
+    if not Add_Block.check_point_p(DB): return False
+    address=tools.addr(tx)
+    acc=blockchain.db_get(address, DB)
+    if DB['length']>custom.check_point_length:
+        if not tools.E_check(tx, 'prev_check_point_hash', [str, unicode]): return False
+    if not tools.E_check(acc, 'stake', int): return False
+    if not tools.E_check(acc, 'stake_flag', bool): return False
+    if not acc['stake_flag']: return False
+    if not signatures_check(tx): return False
+    return True
+def check_point_slasher_verify(tx, txs, DB):
+    if not tools.E_check(tx, 'tx', dict): return False
+    if tools.E_check(tx, 'tx2', dict):
+        if not tools.E_check(tx, 'tx', dict): return False
+        for i in ['tx', 'tx2']:
+            if not check_point_verify(tx[i], [], DB): return False
+        def g(x): return tx[x]['prev_check_point_hash']
+        if g('tx') != g('tx2'): return False
+        def f(x): return tools.tx_hash(tx[x])
+        if f('tx')==f('tx2'): return False
+    else:
+        if not check_point_verify(tx['tx'], [], DB): return False
+        check_point_hashes=tools.recent_blockthings('prev_block_hash', DB, custom.check_point_length, DB['length'], custom.check_point_length)
+        if not tx['tx']['prev_check_point_hash'] in check_point_hashes: return False
+    if not signatures_check(tx): return False
+    address=tools.addr(tx['tx_'])
+    acc=blockchain.db_get(address, DB)
+    if not E_check(acc, 'stake', int): return False
+    if not E_check(acc, 'stake_flag', bool): return False
+    if not acc['stake_flag']: return False
+    #more checks...
+    
+    return True
+
 tx_check={'spend':spend_verify, 
           'sign':sign_verify, 
           'reveal_secret':reveal_secret_verify, 
           'slasher':slasher_verify, 
-          'census':census_verify}####
+          'check_point_slasher':check_point_slasher_verify, 
+          'check_point':check_point_verify}####
 #------------------------------------------------------
+#The following functions are reversible by changing the flag DB['add_block']
 def adjust_int(key, pubkey, amount, DB):
     acc=blockchain.db_get(pubkey, DB)
     n=0
@@ -110,7 +154,7 @@ def adjust_int(key, pubkey, amount, DB):
     blockchain.db_put(pubkey, acc, DB)
 def adjust_list(key, pubkey, remove, item, DB):
     acc=blockchain.db_get(pubkey, DB)
-    if remove != (DB['add_block']):# 'xor' == '!='
+    if remove != (DB['add_block']):# 'xor' and '!=' are the same.
         acc[key].append(item)
     else: acc[key].remove(item)
     blockchain.db_put(pubkey, acc, DB)    
@@ -138,11 +182,24 @@ def slasher(tx, DB):
     adjust_int('count', address, 1, DB)
     adjust_int('amount', criminal, custom.pos_reward/3, DB)
     adjust_list('secret_hashes', tx['tx1']['sign_on'], False, tx['secret_hash'], DB)
-def census(tx, DB):
-    pass
+def check_point(tx, DB):
+    address=tools.addr(tx)
+    acc=blockchain.db_get(address, DB)
+    adjust_int('count', address, 1, DB)
+    adjust_int('amount', address, tools.coins2satoshis(custom.check_point_reward*acc['stake']/DB['all_stake'], DB), DB)
+def check_point_slasher(tx, DB):
+    cp_address=tools.addr(tx['tx'])
+    acc=blockchain.db_get(cp_address, DB)
+    address=tools.addr(tx)
+    adjust_int('count', address, 1, DB)
+    adjust_int('amount', address, 3*tools.coins2satoshis(custom.check_point_reward*acc['stake']/DB['all_stake']), DB)
+    acc['stake_flag']=not DB['add_block']
+    blockchain.db_put(address, acc, DB)
+
 update={'spend':spend,
         'sign':sign,
         'reveal_secret':reveal_secret,
         'slasher':slasher,
-        'census':census}####
+        'check_point_slasher':check_point_slasher,
+        'check_point':check_point}####
 #-----------------------------------------

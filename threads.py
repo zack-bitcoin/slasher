@@ -13,9 +13,10 @@ DB={'db':db,
     'txs':[], 
     'suggested_blocks':[], 
     'suggested_txs':[], 
+    'all_stake':1,
     'all_money':custom.initial_money}
-blockchain.db_put(tools.make_address([pubkey],1), {'count':0, 'amount':custom.initial_money}, DB)
-blockchain.db_put(tools.make_address([pubkey],1), {'count':0, 'amount':custom.initial_money}, DB, 'db_old')
+blockchain.db_put(tools.make_address([pubkey],1), {'count':0, 'amount':custom.initial_money, 'stake':1, 'stake_flag':True}, DB)
+blockchain.db_put(tools.make_address([pubkey],1), {'count':0, 'amount':custom.initial_money, 'stake':1, 'stake_flag':True}, DB, 'db_old')
 todo=[
 #keeps track of blockchain database, checks on peers for new 
 #blocks and transactions.

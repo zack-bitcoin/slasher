@@ -24,9 +24,9 @@ def serve(port, get, post):
                 dic={}
             self.wfile.write(get(dic))
         def do_POST(self):
-            print("path: " + str(self.path))
+            #print("path: " + str(self.path))
             ctype, pdict = cgi.parse_header(self.headers.getheader('content-type'))    
-            print(ctype)
+            #print(ctype)
             if ctype == 'multipart/form-data' or ctype=='application/x-www-form-urlencoded':    
                 fs = cgi.FieldStorage( fp = self.rfile,
                                        headers = self.headers,
@@ -40,6 +40,6 @@ def serve(port, get, post):
     server_address = ('127.0.0.1', port)
     httpd = ServerClass(server_address, MyHandler)
     sa = httpd.socket.getsockname()
-    print "Serving HTTP on", sa[0], "port", sa[1], "..."
+    #print "Serving HTTP on", sa[0], "port", sa[1], "..."
     httpd.serve_forever()
 empty_page='<html>{}</html>'

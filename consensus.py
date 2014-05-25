@@ -56,7 +56,7 @@ def peers_check(dic):
             return
         def ask_for_txs(peer, DB):
             txs = cmd({'type': 'txs'})
-            print('txs: ' +str(txs))
+            #print('txs: ' +str(txs))
             for tx in txs:
                 DB['suggested_txs'].append(tx)
             pushers = [x for x in DB['txs'] if x not in txs]
@@ -68,9 +68,10 @@ def peers_check(dic):
                  'block': blockchain.db_get(block_count['length'] + 1, DB)})
             return []
         block_count = cmd({'type': 'blockCount'})
+        print('block_count: ' +str(block_count))
         if type(block_count) != type({'a': 1}):
-            print('type: ' +str(type(block_count)))
-            print('type error')
+            #print('type: ' +str(type(block_count)))
+            #print('type error')
             return
         if 'error' in block_count.keys():
             print('error 2')
@@ -79,10 +80,12 @@ def peers_check(dic):
         us = DB['sigLength']
         them = block_count['sigLength']
         if them < us:
+            print('GIVE BLOCK')
             return give_block(peer, DB, block_count)
         if us == them:
             print('EQUAL')
             return ask_for_txs(peer, DB)
+        print('ASK FOR BLOCKS')
         return download_blocks(peer, DB, block_count, length)
     for peer in peers:
         peer_check(peer, DB)
@@ -96,4 +99,6 @@ def mainloop(peers, DB):
         #peers_check({'peers':peers, 'DB':DB})
         tools.tryPass(peers_check, {'peers':peers, 'DB':DB})
         tools.tryPass(suggestions, DB)
+        try: print('BLOCKCHAIN: ' +str(blockchain.db_get('0', DB)))
+        except: pass
         time.sleep(2)
