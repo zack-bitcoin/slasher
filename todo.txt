@@ -1,4 +1,0 @@
-if more than 1/2 of stake-coins are lost, freeze the chain.
-
-add more checks to transactions.check_point_slasher_verify()
-

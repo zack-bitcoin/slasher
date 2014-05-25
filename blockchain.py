@@ -48,4 +48,4 @@ def delete_block_(DB):
     if DB['length'] < 0:
         return
     block = db_get(DB['length'], DB)
-    orphan_junk(copy.deepcopy(block['txs']), add_block.downdate, block, DB)
+    orphan_junk(copy.deepcopy(block['txs']), Add_Block.downdate, block, DB)
