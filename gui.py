@@ -6,9 +6,10 @@ def make_block_cost(DB): return tools.coins2satoshis(custom.create_block_fee, DB
 def make_block(pubkey, privkey, DB):
     tx={'type':'spend', 'pubkeys':[pubkey], 'to':'none', 'amount':0, 'fee':make_block_cost(DB)}
     print('make_block cost: ' +str(tx['fee']))
-    tools.sign_broadcast_tx(tx, privkey, DB)
-    block=consensus.make_block(pubkey, DB)
-    blockchain.add_block(block, DB)
+    tx=tools.sign_broadcast_tx(tx, privkey, DB)
+    block=consensus.make_block(pubkey, DB, [tx])
+    DB['suggested_blocks'].append(block)
+    #blockchain.add_block(block, DB)
 
 def spend(amount, pubkey, privkey, to_pubkey, DB):
     amount=tools.coins2satoshis(int(amount), DB)

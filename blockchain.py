@@ -43,9 +43,8 @@ def add_block_(block, DB):
         print('add_block: ' + str(block))
         orphan_junk([], Add_Block.update, block, DB)
         Add_Block.signature_txs(block, DB)
-def delete_block(DB): return add_block.bothchains(DB, delete_block_)
-def delete_block_(DB):
-    if DB['length'] < 0:
-        return
-    block = db_get(DB['length'], DB)
+def delete_block(DB): return Add_Block.bothchains(DB, delete_block_, db_get(DB['length'], DB))
+def delete_block_(block, DB):
+    print('DELETE BLOCK')
+    if DB['length'] < 0: return
     orphan_junk(copy.deepcopy(block['txs']), Add_Block.downdate, block, DB)

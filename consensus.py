@@ -11,12 +11,12 @@ import copy
 import gui
 
 # Tries to mine the next block hashes_till_check many times.
-def make_block(pubkey, DB):
+def make_block(pubkey, DB, bonus_txs=[]):
     length = DB['length']
     out = {'version': custom.version,
            'secret_hashes':[],
            'secrets':[],
-           'txs': DB['txs'],
+           'txs': DB['txs']+bonus_txs,
            'length': length+1}
     if length>=0:
         prev_block = blockchain.db_get(length, DB)
@@ -32,53 +32,61 @@ def peers_check(dic):
         def cmd(x):
             return networking.send_command(peer, x)
         def download_blocks(peer, DB, peers_block_count, length):
-            def fork_check(newblocks, DB):
+            print('DOWNLOAD BLOCKS')
+            def fork_check(hashes, DB):
                 length = copy.deepcopy(DB['length'])
                 block = blockchain.db_get(length, DB)
                 recent_hash = tools.det_hash(block)
-                their_hashes = map(tools.det_hash, newblocks)
-                return recent_hash not in map(tools.det_hash, newblocks)
+                return recent_hash not in hashes
             def bounds(length, peers_block_count, DB):
                 if peers_block_count['length'] - length > custom.download_many:
                     end = length + custom.download_many - 1
                 else:
                     end = peers_block_count['length']
                 return [max(length - 2, 0), end]
-            blocks = cmd({'type': 'rangeRequest',
+            try: blocks = cmd({'type': 'rangeRequest',
                           'range': bounds(length, peers_block_count, DB)})
+            except: blocks=[]
             if type(blocks) != type([1, 2]):
                 return []
+            hashes = map(tools.det_hash, blocks)                
             for i in range(2):  # Only delete a max of 2 blocks, otherwise a
                 # peer might trick us into deleting everything over and over.
-                if fork_check(blocks, DB):
+                print('ABOUT TO FORK CHECK')
+                if fork_check(hashes, DB):
+                    print('PASSED FORK CHECK')
                     blockchain.delete_block(DB)
+                else:
+                    print('DID NOT PASS FORK CHECK')
             DB['suggested_blocks']+=blocks
             return
         def ask_for_txs(peer, DB):
-            txs = cmd({'type': 'txs'})
-            #print('txs: ' +str(txs))
+            try: txs = cmd({'type': 'txs'})
+            except: return []
+            print('txs: ' +str(txs))
             for tx in txs:
                 DB['suggested_txs'].append(tx)
             pushers = [x for x in DB['txs'] if x not in txs]
             for push in pushers:
-                cmd({'type': 'pushtx', 'tx': push})
+                try: cmd({'type': 'pushtx', 'tx': push})
+                except: pass
             return []
         def give_block(peer, DB, block_count):
-            cmd({'type': 'pushblock',
+            try: cmd({'type': 'pushblock',
                  'block': blockchain.db_get(block_count['length'] + 1, DB)})
+            except: pass
             return []
-        block_count = cmd({'type': 'blockCount'})
-        print('block_count: ' +str(block_count))
+        try: block_count = cmd({'type': 'blockCount'})
+        except: block_count=[]
         if type(block_count) != type({'a': 1}):
-            #print('type: ' +str(type(block_count)))
-            #print('type error')
             return
         if 'error' in block_count.keys():
             print('error 2')
             return
         length = DB['length']
-        us = DB['sigLength']
-        them = block_count['sigLength']
+        us = DB['sigLength']#-(DB['length']*1.0/1000)
+        them = block_count['sigLength']#-(block_count['length']*1.0/1000)
+        print('US THEM: ' +str(us)+ ' ' + str(them))
         if them < us:
             print('GIVE BLOCK')
             return give_block(peer, DB, block_count)
@@ -96,9 +104,10 @@ def suggestions(DB):
     DB['suggested_blocks'] = []
 def mainloop(peers, DB):
     while True:
-        #peers_check({'peers':peers, 'DB':DB})
-        tools.tryPass(peers_check, {'peers':peers, 'DB':DB})
-        tools.tryPass(suggestions, DB)
-        try: print('BLOCKCHAIN: ' +str(blockchain.db_get('0', DB)))
-        except: pass
+        peers_check({'peers':peers, 'DB':DB})
+        #tools.tryPass(peers_check, {'peers':peers, 'DB':DB})
+        #tools.tryPass(suggestions, DB)
+        suggestions(DB)
+#        try: print('BLOCKCHAIN: ' +str(blockchain.db_get('0', DB)))
+#        except: pass
         time.sleep(2)

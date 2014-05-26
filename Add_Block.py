@@ -16,11 +16,16 @@ def tx_check(block, DB):
         else: 
             return False  # Block is invalid
 def fee_check(block, DB): 
+    print('FEE_CHECK')
+    print(str(tools.sum_fees(block)))
+    print(str(tools.coins2satoshis(custom.create_block_fee, DB)))
     return tools.sum_fees(block)>=tools.coins2satoshis(custom.create_block_fee, DB)
 def length_check(block, DB): return tools.E_check(block, 'length', DB['length']+1) 
 def reference_previous_block(block, DB):
     if DB['length'] >= 0:#first block is first.
         if tools.det_hash(blockchain.db_get(DB['length'], DB)) != block['prevHash']:
+            print('hash1: ' +str(tools.det_hash(blockchain.db_get(DB['length'], DB))))
+            print('hash2: ' +str(block['prevHash']))
             return False
     return True
 def check_point_check(block, DB):
@@ -39,7 +44,7 @@ def update(block, DB):
     for tx in block['txs']:
         DB['add_block']=True
         transactions.update[tx['type']](copy.deepcopy(tx), DB)
-def downdate(DB):
+def downdate(block, DB):
     DB['txs'] = []
     for tx in block['txs']:
         DB['add_block']=False
@@ -49,8 +54,9 @@ def downdate(DB):
 
 def signature_txs(block, DB):
     secret=str(random.random())
-    tx={'type':'sign', 'secret_hash':tools.make_address([secret], 1), 'pubkeys':[custom.pubkey], 'sign_on':DB['length']-5}
-    tools.sign_broadcast_tx(tx, custom.privkey, DB)
+    for i in range(5):
+        tx={'type':'sign', 'secret_hash':tools.make_address([secret], 1), 'pubkeys':[custom.pubkey], 'sign_on':DB['length']-(5+i)}
+        tools.sign_broadcast_tx(tx, custom.privkey, DB)
     if check_point_p(DB):
         print('MAKING CHECK POINT')
         tx={'type':'check_point', 'sign_on':DB['length']+1, 'pubkeys':[custom.pubkey]}

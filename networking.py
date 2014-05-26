@@ -1,4 +1,6 @@
 import socket, subprocess, re, tools, custom, urllib, zlib
+from time import sleep
+from threading import Thread
 #This file explains how sockets work for networking.
 MAX_MESSAGE_SIZE = 60000
 def kill_processes_using_ports(ports):
@@ -14,14 +16,21 @@ def kill_processes_using_ports(ports):
         if match:
             pid = match.group('pid')
             subprocess.Popen(['kill', '-9', pid])
-def connect(msg, host, port):
+def connect(msg, host, port, time_length=1):
     #print('in connect')
+    def func(string, output):
+        url=urllib.urlopen(string)
+        output[0]=url.read()
     string='http://{}:{}/'.format(host, str(port))
     string+=zlib.compress(msg).encode('hex')
     try:
-        url=urllib.urlopen(string)
-        #print('url: ' +str(url))
-        return tools.unpackage(url.read())
+        output=['error']
+        t=Thread(target=func, args=(string, output))
+        t.daemon=True
+        t.start()
+        sleep(time_length)
+        t.alive=False
+        return tools.unpackage(output[0])
     except:
         #print('ERROR: ' + str(string))
         return {'error':string}

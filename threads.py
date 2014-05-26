@@ -25,7 +25,7 @@ todo=[
     [listener.server, (DB, ), True],
     [consensus.mainloop, 
      (custom.peers, DB), True],
-#listens for peers. Peers might ask us for our blocks and our pool of recent 
+#listens for peers. Peers might ask us for our blocks and our pool ofrecent 
 #transactions, or peers could suggest blocks and transactions to us.
     [gui.main, (custom.gui_port, custom.brainwallet, DB), True]]
 networking.kill_processes_using_ports([str(custom.gui_port),

@@ -93,6 +93,7 @@ def sign_broadcast_tx(tx_orig, privkey, DB):
     address=make_address([pubkey], 1)
     tx['count']=count_func(address, DB)
     tx['signatures']=[sign(det_hash(tx), privkey)]
-    #DB['suggested_txs'].append(tx)#maybe this line is bad
-    blockchain.add_tx(tx, DB)#maybe this line is better
+    DB['suggested_txs'].append(tx)#maybe this line is bad
+    return tx
+    #blockchain.add_tx(tx, DB)#maybe this line is better
 

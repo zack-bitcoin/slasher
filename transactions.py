@@ -114,6 +114,7 @@ def check_point_verify(tx, txs, DB):
 def check_point_slasher_verify(tx, txs, DB):
     if not tools.E_check(tx, 'tx', dict): return False
     if tools.E_check(tx, 'tx2', dict):
+        #signing on sibling blocks is not allowed
         if not tools.E_check(tx, 'tx', dict): return False
         for i in ['tx', 'tx2']:
             if not check_point_verify(tx[i], [], DB): return False
@@ -121,7 +122,13 @@ def check_point_slasher_verify(tx, txs, DB):
         if g('tx') != g('tx2'): return False
         def f(x): return tools.tx_hash(tx[x])
         if f('tx')==f('tx2'): return False
+        '''
+    elif 
+    #signing on less pos-signed block is not allowed
+    #if check point signer signed on the block with less pos signers than an alternative: return False
+    '''
     else:
+        #signing on cousins of the main chain is not allowed
         if not check_point_verify(tx['tx'], [], DB): return False
         check_point_hashes=tools.recent_blockthings('prev_block_hash', DB, custom.check_point_length, DB['length'], custom.check_point_length)
         if not tx['tx']['prev_check_point_hash'] in check_point_hashes: return False
