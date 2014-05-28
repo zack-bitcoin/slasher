@@ -66,7 +66,9 @@ def sign_verify(tx, txs, DB):
                       'length': DB['length'],
                       'secrets':secrets_})
     balance=blockchain.db_get(address, DB, 'db_old')['amount']
-    target=tools.target_times_float('f'*64, 64*balance/DB['all_money'])
+    signers=64
+    if Add_Block.check_point_p(DB): signers=1000
+    target=tools.target_times_float('f'*64, signers*balance/DB['all_money'])
     size=max(len(a), len(target))
     if tools.buffer_(a, size)>=tools.buffer_(target, size):
         print('6')
