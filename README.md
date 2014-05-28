@@ -1,7 +1,7 @@
-hash-slinging-slasher
+Slasher
 =====================
 
-based on [slasher](http://blog.ethereum.org/2014/01/15/slasher-a-punitive-proof-of-stake-algorithm/)
+based on [slasher](http://blog.ethereum.org/2014/01/15/slasher-a-punitive-proof-of-stake-algorithm/) from the Ethereum team.
 
 Donations: 1GbpRPE83Vjg73KFvTVZ4EnS2qNkiLY5TT
 

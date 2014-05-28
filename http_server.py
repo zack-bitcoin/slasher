@@ -1,5 +1,5 @@
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
-import zlib, cgi
+import cgi, tools
 
 def serve(port, get, post):
     def fs2dic(fs):
@@ -19,7 +19,8 @@ def serve(port, get, post):
             try:
                 dic=self.path[1:]
                 dic=dic.decode('hex')
-                dic=zlib.decompress(dic)
+                dic=tools.unpackage(dic)
+                #dic=zlib.decompress(dic)
             except:
                 dic={}
             self.wfile.write(get(dic))

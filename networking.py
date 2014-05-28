@@ -1,4 +1,4 @@
-import socket, subprocess, re, tools, custom, urllib, zlib
+import socket, subprocess, re, tools, custom, urllib
 from time import sleep
 from threading import Thread
 #This file explains how sockets work for networking.
@@ -19,7 +19,7 @@ def kill_processes_using_ports(ports):
 def connect(msg, host, port, time_length=1):
     #print('in connect')
     string='http://{}:{}/'.format(host, str(port))
-    string+=zlib.compress(msg).encode('hex')
+    string+=tools.package(msg).encode('hex')
     try:
         output=['error']
         def func(string, output): 
