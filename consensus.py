@@ -28,11 +28,9 @@ def peers_check(dic):
     peers=dic['peers']
     DB=dic['DB']
     def peer_check(peer, DB):
-        #print('check peer: '+str(peer))
         def cmd(x):
             return networking.send_command(peer, x)
         def download_blocks(peer, DB, peers_block_count, length):
-            print('DOWNLOAD BLOCKS')
             def fork_check(hashes, DB):
                 length = copy.deepcopy(DB['length'])
                 block = blockchain.db_get(length, DB)
@@ -52,18 +50,13 @@ def peers_check(dic):
             hashes = map(tools.det_hash, blocks)                
             for i in range(2):  # Only delete a max of 2 blocks, otherwise a
                 # peer might trick us into deleting everything over and over.
-                print('ABOUT TO FORK CHECK')
                 if fork_check(hashes, DB):
-                    print('PASSED FORK CHECK')
                     blockchain.delete_block(DB)
-                else:
-                    print('DID NOT PASS FORK CHECK')
             DB['suggested_blocks']+=blocks
             return
         def ask_for_txs(peer, DB):
             try: txs = cmd({'type': 'txs'})
             except: return []
-            print('txs: ' +str(txs))
             for tx in txs:
                 DB['suggested_txs'].append(tx)
             pushers = [x for x in DB['txs'] if x not in txs]
@@ -86,16 +79,13 @@ def peers_check(dic):
         length = DB['length']
         us = DB['sigLength']#-(DB['length']*1.0/1000)
         them = block_count['sigLength']#-(block_count['length']*1.0/1000)
-        print('US THEM: ' +str(us)+ ' ' + str(them))
         if them < us:
-            print('GIVE BLOCK')
             return give_block(peer, DB, block_count)
         if us == them:
-            print('EQUAL')
             return ask_for_txs(peer, DB)
-        print('ASK FOR BLOCKS')
         return download_blocks(peer, DB, block_count, length)
     for peer in peers:
+        suggestions(DB)
         peer_check(peer, DB)
 def suggestions(DB):
     [blockchain.add_tx(tx, DB) for tx in DB['suggested_txs']]
@@ -105,9 +95,4 @@ def suggestions(DB):
 def mainloop(peers, DB):
     while True:
         peers_check({'peers':peers, 'DB':DB})
-        #tools.tryPass(peers_check, {'peers':peers, 'DB':DB})
-        #tools.tryPass(suggestions, DB)
-        suggestions(DB)
-#        try: print('BLOCKCHAIN: ' +str(blockchain.db_get('0', DB)))
-#        except: pass
         time.sleep(2)

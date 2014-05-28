@@ -10,22 +10,16 @@ def tx_check(block, DB):
     start_copy = []
     while True:
         if start == []: return True  # Block passes this test
-        print('about to check txs: ' +str(start))
         if transactions.tx_check[start[-1]['type']](start[-1], out, DB):
             out.append(start.pop())
         else: 
             return False  # Block is invalid
 def fee_check(block, DB): 
-    print('FEE_CHECK')
-    print(str(tools.sum_fees(block)))
-    print(str(tools.coins2satoshis(custom.create_block_fee, DB)))
     return tools.sum_fees(block)>=tools.coins2satoshis(custom.create_block_fee, DB)
 def length_check(block, DB): return tools.E_check(block, 'length', DB['length']+1) 
 def reference_previous_block(block, DB):
     if DB['length'] >= 0:#first block is first.
         if tools.det_hash(blockchain.db_get(DB['length'], DB)) != block['prevHash']:
-            print('hash1: ' +str(tools.det_hash(blockchain.db_get(DB['length'], DB))))
-            print('hash2: ' +str(block['prevHash']))
             return False
     return True
 def check_point_check(block, DB):
@@ -58,11 +52,10 @@ def signature_txs(block, DB):
         tx={'type':'sign', 'secret_hash':tools.make_address([secret], 1), 'pubkeys':[custom.pubkey], 'sign_on':DB['length']-(5+i)}
         tools.sign_broadcast_tx(tx, custom.privkey, DB)
     if check_point_p(DB):
-        print('MAKING CHECK POINT')
         tx={'type':'check_point', 'sign_on':DB['length']+1, 'pubkeys':[custom.pubkey]}
         if DB['length']>custom.check_point_length:
             tx['prev_check_point_hash']=blockchain.db_get(block['length']+2-custom.check_point_length, DB)['prevHash']
-        tools.sign_broadcast_tx(tx, custom.privkey, DB)
+        tools.sign_broadcast_tx(tx, custom.privkey, DB, 1)
 
 def block_check(block, DB):
     if not isinstance(block, dict): return False
@@ -73,7 +66,6 @@ def block_check(block, DB):
         tests.remove(fee_check)
     for test in tests:
         if not test(block, DB): 
-            print('failed on test: ' +str(test))
             return False
     return True
 def bothchains(DB, func, block):

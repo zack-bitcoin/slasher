@@ -18,13 +18,12 @@ def kill_processes_using_ports(ports):
             subprocess.Popen(['kill', '-9', pid])
 def connect(msg, host, port, time_length=1):
     #print('in connect')
-    def func(string, output):
-        url=urllib.urlopen(string)
-        output[0]=url.read()
     string='http://{}:{}/'.format(host, str(port))
     string+=zlib.compress(msg).encode('hex')
     try:
         output=['error']
+        def func(string, output): 
+            output[0]=urllib.urlopen(string).read()
         t=Thread(target=func, args=(string, output))
         t.daemon=True
         t.start()

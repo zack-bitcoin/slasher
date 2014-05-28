@@ -87,11 +87,11 @@ def satoshis2coins(satoshis, DB):
     return satoshis*1.0*custom.total_coins/DB['all_money']
 def coins2satoshis(coins, DB):
     return int(coins*DB['all_money']/custom.total_coins)
-def sign_broadcast_tx(tx_orig, privkey, DB):
+def sign_broadcast_tx(tx_orig, privkey, DB, count_bump=0):
     tx=copy.deepcopy(tx_orig)
     pubkey=privtopub(privkey)
     address=make_address([pubkey], 1)
-    tx['count']=count_func(address, DB)
+    tx['count']=count_func(address, DB)+count_bump
     tx['signatures']=[sign(det_hash(tx), privkey)]
     DB['suggested_txs'].append(tx)#maybe this line is bad
     return tx
