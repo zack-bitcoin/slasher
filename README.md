@@ -39,12 +39,14 @@ Then send your browser to
 
 4) If you catch a pos signer trying to sign 2 opposing forks, you can take his reward from him. see [slasher](http://blog.ethereum.org/2014/01/15/slasher-a-punitive-proof-of-stake-algorithm/)
 
-(not yet implemented) 5) Several thousand people are in a seperate class from the rest of us. These people own a second type of money which is non-transferable. It was given to them on the genesis block. Every thousandth block of the blockchain is a census block. A census block requires at least 2/3rds of the special class of people to sign it. Upon signing the census block, they recieve a reward.
+5) Several thousand people are in a seperate class from the rest of us. These people own a second type of money which is non-transferable. It was given to them on the genesis block. Every thousandth block of the blockchain is a census block. A census block requires at least 2/3rds of the special class of people to sign it. Upon signing the census block, they recieve a reward.
 
-(not yet implemented) 6) If a member from the special class is ever caught signing competing census blocks, his special-money can be destroyed. Once a census-singer signs a block, he is only allowed to sign children of that block from then on.
+6) If a member from the special class is ever caught signing competing census blocks, his special-money can be destroyed. Once a census-singer signs a block, he is only allowed to sign children of that block from then on.
 
 
 ###Types of attack, and why we are secure from them:
+
+A comprehensive explanation of why the ideal proof-of-stake system is impossible: http://download.wpsoftware.net/bitcoin/pos.pdf
 
 1) simple double-spend. Spend a large amount of money in a single block, quickly mine 2 blocks to create a longer chain and un-spend your money.
 
