@@ -96,4 +96,8 @@ def sign_broadcast_tx(tx_orig, privkey, DB, count_bump=0):
     DB['suggested_txs'].append(tx)#maybe this line is bad
     return tx
     #blockchain.add_tx(tx, DB)#maybe this line is better
+def check_point_p(DB):#998, 1998, 2998...
+    bl=custom.check_point_length
+    return DB['length']%bl==bl-2
+
 

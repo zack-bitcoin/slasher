@@ -1,4 +1,4 @@
-import blockchain, custom, copy, tools, Add_Block
+import blockchain, custom, copy, tools
 #This file explains how we tell if a transaction is valid or not, it explains 
 #how we update the system when new transactions are added to the blockchain.
 def signatures_check(tx):
@@ -16,6 +16,8 @@ def signatures_check(tx):
     msg=tools.tx_hash(tx)
     if not sigs_match(tx['signatures'], tx['pubkeys'], msg): 
         print('bad sig')
+        print('in tx: ' +str(tx))
+        print('msg: ' +str(msg))
         return False
     return True
 def spend_verify(tx, txs, DB): 
@@ -46,28 +48,25 @@ def sign_verify(tx, txs, DB):
         print('3')
         return False
     if not tools.E_check(tx, 'secret_hash', [str, unicode]): 
-        #print('no secret hash')
-        #print('tx: ' +str(tx))
-        #print('4')
         return False
     if len(tx['secret_hash']) != 31: 
         print('5')
         return False
-    print('tx: ' +str(tx))
     if tools.addr(tx) in map(lambda t: t['address'], blockchain.db_get(tx['sign_on'], DB)['secret_hashes']):
         print('Each address can sign each block a maximum of 1 time')
         return False
     address=tools.addr(tx)
     secrets=tools.recent_blockthings('secrets', DB, tx['sign_on']-2000, tx['sign_on']-1900)
-    secrets_={}#we need this to stay in the same order. det_hash normally uses sorted on lists.
+    secrets_={}
     for i in range(len(secrets)):
         secrets_[str(i)]=secrets[i]
     a=tools.det_hash({'address': address,
                       'length': DB['length'],
                       'secrets':secrets_})
     balance=blockchain.db_get(address, DB, 'db_old')['amount']
-    signers=64
-    if Add_Block.check_point_p(DB): signers=1000
+    signers=custom.normal_ns
+    if tools.check_point_p({'length': DB['length']+10}): signers=custom.large_ns
+    #pos signers have 10 blocks within which to accomplish their signature, so this should occur 10 blocks before the checkpoint. The 10 blocks between here and the checkpoint are insecure against double-spends.
     target=tools.target_times_float('f'*64, signers*balance/DB['all_money'])
     size=max(len(a), len(target))
     if tools.buffer_(a, size)>=tools.buffer_(target, size):
@@ -103,15 +102,49 @@ def check_point_verify(tx, txs, DB):
     if not tools.E_check(tx, 'sign_on', int):
         print('no sign on')
         return False
-    if not Add_Block.check_point_p(DB): return False
+    if not tools.check_point_p(DB): 
+        print('check point p')
+        return False
     address=tools.addr(tx)
     acc=blockchain.db_get(address, DB)
     if DB['length']>custom.check_point_length:
-        if not tools.E_check(tx, 'prev_check_point_hash', [str, unicode]): return False
-    if not tools.E_check(acc, 'stake', int): return False
-    if not tools.E_check(acc, 'stake_flag', bool): return False
-    if not acc['stake_flag']: return False
-    if not signatures_check(tx): return False
+        if not tools.E_check(tx, 'prev_check_point_hash', [str, unicode]): 
+            print('TYpe error')
+            return False
+    if not tools.E_check(acc, 'stake', int): 
+        print('stake error')
+        return False
+    if not tools.E_check(acc, 'stake_flag', bool): 
+        print('stake flag error')
+        return False
+    if not acc['stake_flag']: 
+        print('stake flag 2')
+        return False
+    if not signatures_check(tx): 
+        print('sig check')
+        return False
+    blocks=[blockchain.db_get(DB['length']-i, DB) for i in range(10)]
+    txs=[]
+    for block in blocks:
+        if 'txs' in block: txs.extend(block['txs'])
+    txs=filter(lambda x: x['type']=='sign', txs)
+    #print('ALL SIGS: ' +str(txs))
+    txs=filter(lambda x: x['sign_on']==DB['length']-10, txs)
+    #print('SIGNED ON CORRECT BLOCK: '+str(DB['length']-10)+' ' +str(txs))
+    amount=0
+    for tx in txs:
+        address=tools.addr(tx)
+        acc=blockchain.db_get(address, DB)
+        money=int(acc['amount']/DB['all_money']*custom.large_ns)
+        if money<1: 
+            amount+=1
+        else: 
+            amount+=int(money)
+    if amount<custom.large_ns/3: 
+        print('amount: ' +str(amount))
+        print('PREVIOUS BLOCK DID NOT HAVE ENOUGH SIGNATURES')
+        return False
+    print('SINGATURES amount: ' +str(amount))
     return True
 def check_point_slasher_verify(tx, txs, DB):
     if not tools.E_check(tx, 'tx', dict): return False
@@ -124,11 +157,6 @@ def check_point_slasher_verify(tx, txs, DB):
         if g('tx') != g('tx2'): return False
         def f(x): return tools.tx_hash(tx[x])
         if f('tx')==f('tx2'): return False
-        '''
-    elif 
-    #signing on less pos-signed block is not allowed
-    #if check point signer signed on the block with less pos signers than an alternative: return False
-    '''
     else:
         #signing on cousins of the main chain is not allowed
         if not check_point_verify(tx['tx'], [], DB): return False
@@ -175,10 +203,18 @@ def spend(tx, DB):
 def secret(tx): return {'hash':tx['secret_hash'], 
                         'address':tools.addr(tx)}
 def sign(tx, DB):
+    address=tools.addr(tx)
+    balance=blockchain.db_get(address, DB, 'db_old')['amount']
     adjust_int('count', tools.addr(tx), 1, DB)
     adjust_list('secret_hashes', tx['sign_on'], False, secret(tx), DB)
-    if DB['add_block']: DB['sigLength']+=1
-    else: DB['sigLength']-=1
+    signers=custom.normal_ns
+    if tools.check_point_p({'length': DB['length']+10}): 
+        print('THIS IS THE HUGE BLOCK, it is number: ' +str(DB['length']))
+        signers=custom.large_ns
+    sig_length=signers*balance/DB['all_money']
+    if sig_length<1: sig_length=1
+    if DB['add_block']: DB['sigLength']+=sig_length
+    else: DB['sigLength']-=sig_length
 def reveal_secret(tx, DB):
     address=tools.addr(tx)
     adjust_int('count', address, 1, DB)

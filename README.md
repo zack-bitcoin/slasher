@@ -67,3 +67,9 @@ A comprehensive explanation of why the ideal proof-of-stake system is impossible
 ** Case 1: over 1/2 of non-transferable coins are still secure. Use proof-of-burn to allow people to choose which new currency they want to join, or create new currencies where everyone owns money in the same amounts as the destroyed currency.
 
 ** Case 2: over 1/2 of non-transferable coins are revealed to adversaries. Can create new currencies where everyone owns money in the same amounts as the destroyed currency.
+
+
+TODO list:
+1) POS signers need to be more intelligent. If they miss out on signing a block, they should re-write their signature, and try including it in the next block.
+2) POS signers should collect their rewards.
+

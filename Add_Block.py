@@ -1,8 +1,4 @@
 import custom, tools, transactions, copy, blockchain, random
-def check_point_p(DB):#998, 1998, 2998...
-    bl=custom.check_point_length
-    return DB['length']%bl==bl-2
-
 def tx_check(block, DB):
     if not tools.E_check(block, 'txs', list): return False
     start = copy.deepcopy(DB['txs'])
