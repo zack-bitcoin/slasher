@@ -92,7 +92,23 @@ def suggestions(DB):
     DB['suggested_txs'] = []
     [blockchain.add_block(block, DB) for block in DB['suggested_blocks']]
     DB['suggested_blocks'] = []
+def sign_tx(DB):
+    secret=str(random.random())
+    for i in range(5):
+        tx={'type':'sign', 'secret_hash':tools.make_address([secret], 1), 'pubkeys':[custom.pubkey], 'sign_on':DB['length']-(5+i)}
+        tools.sign_broadcast_tx(tx, custom.privkey, DB)
+def checkpoint_tx(DB):
+    if tools.check_point_p(DB):
+        tx={'type':'check_point', 'sign_on':DB['length']+1, 'pubkeys':[custom.pubkey]}
+        if DB['length']>custom.check_point_length:
+            tx['prev_check_point_hash']=blockchain.db_get(block['length']+2-custom.check_point_length, DB)['prevHash']
+        tools.sign_broadcast_tx(tx, custom.privkey, DB, 1)
+def secret_tx(DB):
+    pass
 def mainloop(peers, DB):
     while True:
         peers_check({'peers':peers, 'DB':DB})
+        for f in [checkpoint_tx, sign_tx, secret_tx]:
+            suggestions(DB)        
+            f(DB)
         time.sleep(2)

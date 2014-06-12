@@ -41,7 +41,7 @@ def add_block_(block, DB):
     if Add_Block.block_check(block, DB):
         print('add_block: ' + str(block))
         orphan_junk([], Add_Block.update, block, DB)
-        Add_Block.signature_txs(block, DB)
+#        Add_Block.signature_txs(block, DB)
 def delete_block(DB): return Add_Block.bothchains(DB, delete_block_, db_get(DB['length'], DB))
 def delete_block_(block, DB):
     if DB['length'] < 0: return

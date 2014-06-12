@@ -42,22 +42,11 @@ def downdate(block, DB):
     blockchain.db_delete(DB['length'], DB)
     DB['length'] -= 1
 
-def signature_txs(block, DB):
-    secret=str(random.random())
-    for i in range(5):
-        tx={'type':'sign', 'secret_hash':tools.make_address([secret], 1), 'pubkeys':[custom.pubkey], 'sign_on':DB['length']-(5+i)}
-        tools.sign_broadcast_tx(tx, custom.privkey, DB)
-    if check_point_p(DB):
-        tx={'type':'check_point', 'sign_on':DB['length']+1, 'pubkeys':[custom.pubkey]}
-        if DB['length']>custom.check_point_length:
-            tx['prev_check_point_hash']=blockchain.db_get(block['length']+2-custom.check_point_length, DB)['prevHash']
-        tools.sign_broadcast_tx(tx, custom.privkey, DB, 1)
-
 def block_check(block, DB):
     if not isinstance(block, dict): return False
     if 'error' in block: return False
     tests=copy.deepcopy(Tests)
-    if check_point_p(DB):
+    if tools.check_point_p(DB):
         tests.append(check_point_check)
         tests.remove(fee_check)
     for test in tests:
