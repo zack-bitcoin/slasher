@@ -70,6 +70,8 @@ A comprehensive explanation of why the ideal proof-of-stake system is impossible
 
 
 TODO list:
-1) POS signers need to be more intelligent. If they miss out on signing a block, they should re-write their signature, and try including it in the next block.
-2) POS signers should collect their rewards.
+1) POS signers should collect their rewards.
+2) Look for security holes.
+3) Reorganize which functions are in which files for readability.
+4) automatic port forwarding. UPnP?
 
