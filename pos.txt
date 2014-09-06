@@ -9,7 +9,7 @@ His arguments rest upon a false assumption. He assumes that consensus can only b
 
 If you take the assumption to be true, it is easy to show that long-range attack is always possible. Because it does not cost anything to build a longer blockchain. This is known as "costless-simulation argument".
 
-A simple counter-example to the costless-simulation argument is the relationship between litecoin and bitcoin. Even if litecoin was longer than bitcoin, the bitcoin nodes would still only download bitcoin blocks, and would not start downloading litecoin blocks.
+A simple counter-example to the assumption that costless-simulation arguments depend upon is the relationship between litecoin and bitcoin. Even if litecoin was longer than bitcoin, the bitcoin nodes would still only download bitcoin blocks, and would not start downloading litecoin blocks.
 
 In my proposal, long-range attack forks are distinguishable altcoins. Commiting a long-range attack is identical to forking the code, and launching an altcoin.
 
@@ -33,12 +33,6 @@ To make this type of attack impossible, I make the following changes.
 
 
 ==========If you are too lazy to read Vitalik's blog entry on slasher, but are still curious of what slasher does=============
-
-components to slasher:
-random number generator
-jury
-punitive tx 
-
 
 ----jury
 *the jury is selected randomly from coin-holders.
