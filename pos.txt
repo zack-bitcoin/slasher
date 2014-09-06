@@ -1,16 +1,23 @@
+This is a weaker kind of consensus than POW consensus. If you you leave your computer off longer than 2 weeks, your money will get deleted.
+It is recommended to sell all your money for bitcoin before turning off your computer, every time.
+
+===========response to andytoshi========
+
 Andrew Poelstra wrote a paper about how POS is impossible: https://download.wpsoftware.net/bitcoin/pos.pdf
 
-I think his arguments rest upon a false assumption. He assumes that consensus can only be achieved if the longest blockchain is also the correct one.
+His arguments rest upon a false assumption. He assumes that consensus can only be achieved if the longest blockchain is also the correct one.
 
 If you take the assumption to be true, it is easy to show that long-range attack is always possible. Because it does not cost anything to build a longer blockchain. This is known as "costless-simulation argument".
 
-In my proposal, long-range attack forks are distinguishable altcoins. If litecoin was longer than bitcoin, the nodes running bitcoind would still download bitcoin blocks, even though the litecoin blocks are technically "longer". Commiting a long-range attack is identical to forking the code, and launching an altcoin.
+A simple counter-example to the costless-simulation argument is the relationship between litecoin and bitcoin. Even if litecoin was longer than bitcoin, the bitcoin nodes would still only download bitcoin blocks, and would not start downloading litecoin blocks.
 
-implementation details below:
+In my proposal, long-range attack forks are distinguishable altcoins. Commiting a long-range attack is identical to forking the code, and launching an altcoin.
 
-I start with this https://blog.ethereum.org/2014/01/15/slasher-a-punitive-proof-of-stake-algorithm/ and make a couple changes.
+=============implementation details============
 
-1) The reward for mining a block should be negative. No one makes blocks until there are enough transaction fees to pay for a new block.
+I start with this https://blog.ethereum.org/2014/01/15/slasher-a-punitive-proof-of-stake-algorithm/ Slasher is safe against any forks where were created within the last 3000 blocks. I do the following upgrades, to make slasher secure against forks from longer ago:
+
+1) The reward for mining a block should be negative. Usually, no one makes blocks until there are enough transaction fees to pay for a new block. It is impossible to use money to get more money.
 
 2) The POW for each block should be far lower. 5 seconds on a core 2 DUO doing CPU mining.
 
@@ -24,3 +31,42 @@ To make this type of attack impossible, I make the following changes.
 
 3) Each node needs a list of public keys that have money. When a node boots up, it downloads the longest blockchain where at least one of the public keys from the list still has money.
 
+
+==========If you are too lazy to read Vitalik's blog entry on slasher, but are still curious of what slasher does=============
+
+components to slasher:
+random number generator
+jury
+punitive tx 
+
+
+----jury
+*the jury is selected randomly from coin-holders.
+*jurors have the potential to collect a reward, if they successfully broadcast 2 txs at the right times.
+*the first is called 'signature tx' the second is 'reveal tx'
+
+----signature tx
+*it has a 10-block window where it can be broadcast. 
+*This tx can only be put onto a single fork. 
+*If a juror tries to sign multiple forks, they lose money and their signatures are erased on both forks. 
+*This tx contains HASH(secret)
+
+----reveal tx
+-*it has a 900-block window where it can be broadcast. 
+-*reveals secret
+-*gives the juror a reward.
+
+-----random number generator
+*the random number generator's seed is made up of revealed secrets from jurors from over 3000 blocks ago.
+*the random number generator selects who will be on jury for the next block.
+
+----punitive tx
+*you have to prove that a juror signed on multiple forks.
+*the juror is punished, and you recieve a reward.
+
+It is impossible to do a long-range attack within the last 3000 blocks because the seed to the random number generator is already set, and the people who were elected as juror are
+
+========FAQ=============
+
+What if a majority of coin-holders decide to stop a minority from pledging to the real fork?
+The minority can try to purchase blocks too, and they are willing to spend ALL of their money rather than have it destroyed. The attackers will have to spend even more money than that the victims, and they have to spend it on every single block till the victims die. That is 1000 blocks.
