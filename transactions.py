@@ -39,6 +39,8 @@ def signature_check(tx):
         return False
     return True
 def spend_verify(tx, txs, DB):
+    #can we afford this?
+    #do we need to pledge to a blockchain?
     if not E_check(tx, 'to', [str, unicode]):
         tools.log('no to')
         return False
@@ -53,25 +55,50 @@ def spend_verify(tx, txs, DB):
     if not E_check(tx, 'amount', int):
         tools.log('no amount')
         return False
-    tx_copy.pop('signatures')
     if not txs_tools.fee_check(tx, txs, DB):
         tools.log('fee check error')
         return False
     return True
 def sign_verify(tx, txs, DB):
+    #were we elected 3000 blocks ago?
+    if not signature_check(tx):
+        tools.log('signature check')
+        return False
+    if not E_check(tx, 'secret_hash', [str, unicode]):
+        tools.log('no secret_hash')
+        return False
     return True
 def reveal_secret_verify(tx, txs, DB):
+    #does the secret match the thing it is supposed to match?
+    #do NOT check for a signature, anyone can spend this.
+    if not E_check(tx, 'secret_hash', [str, unicode]):
+        tools.log('no secret_hash')
+        return False
+    if not E_check(tx, 'secret', [str, unicode]):
+        tools.log('no secret')
+        return False
     return True
 def sign_slasher_verify(tx, txs, DB):
-    if not signatures_check(tx): return False
+    #do NOT check for a signature, anyone can spend this.
     if not signatures_check(tx['tx1']): return False
     if not signatures_check(tx['tx2']): return False
     if tools.addr(tx['tx1'])!=tools.addr(tx['tx2']): return False
+    if black_listed_p(tools.addr(tx['tx2'])): return False
     if tx['tx1']['sign_on'] != tx['tx2']['sign_on']: return False
     return True
 def pledge_verify(tx, txs, DB):
+    if not E_check(tx, 'expiration', int):
+        tools.log('no expiration')
+        return False
+    if not signature_check(tx):
+        tools.log('signature check')
+        return False
     return True
 def pledge_slasher_verify(tx, txs, DB):
+    #do NOT check for a signature, anyone can spend this.
+    if not signatures_check(tx['tx1']): return False
+    if not signatures_check(tx['tx2']): return False
+    if tools.addr(tx['tx1'])!=tools.addr(tx['tx2']): return False
     return True
 tx_check = {'spend':spend_verify,
             'sign':sign_verify,
@@ -84,17 +111,16 @@ adjust_int=txs_tools.adjust_int
 adjust_dict=txs_tools.adjust_dict
 adjust_list=txs_tools.adjust_list
 symmetric_put=txs_tools.symmetric_put
-#def mint(tx, DB):
-#    address = tools.addr(tx)
-#    adjust_int(['amount'], address, custom.block_reward, DB)
-#    adjust_int(['count'], address, 1, DB)
 def spend(tx, DB):
+    #spends money
     address = tools.addr(tx)
     adjust_int(['amount'], address, -tx['amount'], DB)
     adjust_int(['amount'], tx['to'], tx['amount'], DB)
     adjust_int(['amount'], address, -custom.fee, DB)
     adjust_int(['count'], address, 1, DB)
 def sign(tx, DB):
+    #creates secret
+    #secret
     '''
     print('DOING SIGN')
     address=tools.addr(tx)
@@ -115,14 +141,20 @@ def sign(tx, DB):
     print('end: ' +str(start))
     '''
 def reveal_secret(tx, DB):
+    #reveals secret, pays reward
     address=tools.addr(tx)
-    '''
     adjust_int('count', address, 1, DB)
     adjust_int('amount', address, custom.pos_reward, DB)
-    adjust_list('secret_hashes', tx['sign_on'], True, secret(tx), DB)
-    adjust_list('secrets', tx['sign_on'], False, tx['secret'], DB)
-    '''
-def slasher(tx, DB):
+    #adjust_list('secret_hashes', tx['sign_on'], True, secret(tx), DB)
+    #adjust_list('secrets', tx['sign_on'], False, tx['secret'], DB)
+def reveal_secret_slasher(tx, DB):
+    #replace secret_hash with the secret
+    pass
+def pledge(tx, DB):
+    #moves the expiration date further into the future.
+    pass
+def pledge_slasher(tx, DB):
+    #destroys someone's monoey, and gives 4/5ths to someone else
     '''
     address=tools.addr(tx)
     criminal=tools.addr(tx['tx1'])
@@ -130,11 +162,10 @@ def slasher(tx, DB):
     adjust_int('amount', criminal, custom.pos_reward/3, DB)
     adjust_list('secret_hashes', tx['tx1']['sign_on'], False, tx['secret_hash'], DB)
     '''
-def pledge(tx, DB):
-    pass
 
 update = {'spend':spend,
           'sign':sign,
           'reveal_secret':reveal_secret,
-          'slasher':slasher,
-          'pledge':pledge}
+          'sign_slasher':slasher,
+          'pledge':pledge,
+          'pledge_slasher':pledge_slasher}

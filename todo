@@ -1,0 +1,3 @@
+1) edit transactions to support the right transactions
+2) parallelize the blockchain database, so that we can see how people own money now, and how they owned money 3000 blocks ago.
+3) edit the api to support the new list of commands (including buy_block)
