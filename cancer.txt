@@ -3,19 +3,19 @@ Cancer- multicellular life as a proof-of-stake solution to byzantine generals pr
 Plane wings were invented by looking at birds. Biology already solved most of the hard engineering problems.
 
 Incentives for homeostasis.
-1)Each cell really likes the existence of the human, because when the cells work together this way, the emergent behaviour makes survival easier. 
-2)Each individual cell wants to over-exploit this resource. They want to consume all the food instantly, and reproduce as fast as possible. This exploitation would end up destroying homeostasis. 
-3)To stay alive, the human needs a strict set of rules for cellular reproduction. The rules need to be strict enough to catch every type of cell that starts becoming cancerous, and to kill the cell before it goes completely cancerous. 
-4)No matter what set of cancer-catching rules are used, eventually a point in time comes where the cells evolve the ability to overcome all the rules, and then the person dies of cancer.
+1) Each cell benefits from the existence of the human. The human feeds and cares for them.
+2) Each individual cell wants to over-exploit this resource. They want to consume all the food instantly, and reproduce as fast as possible. This exploitation would end up destroying homeostasis. 
+3) To stay alive, the cells needs a strict set of rules for cellular reproduction. The rules need to be strict enough to catch every type of cell that starts becoming cancerous, and to kill the cell before it goes completely cancerous. 
+4) No matter what set of cancer-catching rules are used, eventually a point in time comes where the cells evolve the ability to overcome all the rules, and then the person dies of cancer.
 5) A really good set of rules can be the difference between a 5-year life, and a 120-year life.
 6) There is an additional type of reproduction, called sexual reproduction. It reproduces the entire organism without threatening homeostasis. The rules do not prevent this type of reproduction.
 7) To stop humans from extinction, they sexually reproduce before they die.
 
 Incentives for consensus.
-1)Each node really likes the existence of consensus. The emergent behaviour makes survival easier for nodes. 
-2)Each node wants to over-exploit this resource. They want to double-spend money, and spend other people's money. This exploitation would end up destroying consensus. 
-3)To maintain consensus, the blockchain needs a strict set of rules for how to make blocks. The rules need to be able to tell the difference between the fake and real fork. 
-4)No matter what rules you use, eventually a point in time comes when it is possible to create fake blockchains that look real. Consensus ends at that point in time, which is called "cancer".
+1) Each node benefits from the existence of consensus. They have money invested into the blockchain. 
+2) Each node wants to over-exploit this resource. They want to double-spend money, and spend other people's money. This exploitation would end up destroying consensus. 
+3) To maintain consensus, the nodes needs a strict set of rules for how to make blocks. The rules need to be able to tell the difference between the fake and real fork. 
+4) No matter what rules you use, eventually a point in time comes when it is possible to create fake blockchains that look real. Consensus ends at that point in time, which is called "cancer".
 5) A really good set of rules can be the difference between a 400-long blockchain, and a 3,000,000-long blockchain.
 6) There is an additional type of block that can be mined. It reproduces the entire blockchain from a point in history without threatening consensus. The rules do not need to prevent this type of reproduction. 
 7) To maintain consensus beyond the life-span of a single blockchain, we can have the blockchain reproduce everyone's money into a new genesis block before it dies.
