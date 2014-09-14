@@ -107,8 +107,7 @@ def sign_verify(tx, txs, DB):
     block=tools.db_get(tx['sign_on'], DB)
     if tx['rand_nonce']!=block['rand_nonce']:
         '''
-        bad block-tx error: {u'count': 121, u'signatures': [u'G8B2MY84ycJRtxl9TmkkGewmfIx4kAINBvlzXzgvBSd05FL+KXDqOla6hRkFlnR25sLvlvUFb7dI7zwz+G8CMqk='], u'type': u'sign', u'block_hash': u'dd63f36259796629031b8e096666fb97531bbbf750a6b90c9ea9ee931a07a345', u'sign_on': 115, u'pubkeys': [u'0444b7b6190c2b23e5580bbe35db85ffac275e2562d007f950e240d5f01ba24ed5c8f1d5cba845f7c27a1546ff67af866683eef2ba3088c7bc0e4e4f4769bd31a0'], u'secret_hash': u'b9221333e62943024f0b87ccd5881a0aa0d7ac9d6c0a4e1fafe693c05d420389'}
-        in block: {u'count': 97, u'signatures': [u'G5m+gUXDlK+2Kop3ob2uRBvso8I2BVekf6eth/gtrcEBnk8PVmC6v8nMtMimrSe9c/p0Q5cq4/lx2JdT195mXls='], u'sig_length': 1, u'length': 123, u'version': u'VERSION', u'pubkeys': [u'0444b7b6190c2b23e5580bbe35db85ffac275e2562d007f950e240d5f01ba24ed5c8f1d5cba845f7c27a1546ff67af866683eef2ba3088c7bc0e4e4f4769bd31a0'], u'prevHash': u'6b6886752ca24402bd27527798395b356b1ac20cb094a013ac99c8aac2541994', u'txs': [{u'count': 121, u'signatures': [u'G8B2MY84ycJRtxl9TmkkGewmfIx4kAINBvlzXzgvBSd05FL+KXDqOla6hRkFlnR25sLvlvUFb7dI7zwz+G8CMqk='], u'secret_hash': u'b9221333e62943024f0b87ccd5881a0aa0d7ac9d6c0a4e1fafe693c05d420389', u'block_hash': u'dd63f36259796629031b8e096666fb97531bbbf750a6b90c9ea9ee931a07a345', u'sign_on': 115, u'pubkeys': [u'0444b7b6190c2b23e5580bbe35db85ffac275e2562d007f950e240d5f01ba24ed5c8f1d5cba845f7c27a1546ff67af866683eef2ba3088c7bc0e4e4f4769bd31a0'], u'type': u'sign'}]}
+        @(#REUDF)(*@$HF)*$@HF*(SU#@)(*UF)(@$#UF@)(*$UF)($@UF)($
         sign block_hash does not match
         '''
         tools.log('sign block_hash does not match')

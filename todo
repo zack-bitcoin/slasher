@@ -1,3 +1,4 @@
-1) edit transactions to support the right transactions
-2) parallelize the blockchain database, so that we can see how people own money now, and how they owned money 3000 blocks ago.
-3) edit the api to support the new list of commands (including buy_block)
+1) edit transactions.py to support the right transactions
+2) have it automatically sign blocks it is able to, and have it automatically reveal secrets, and automatically pledge
+3) if we are talking to a peer, and they tell us a contradiction, then we should create the slasher transaction to punish
+4)sig_length should count more for people who have more than 1/64th of the money.

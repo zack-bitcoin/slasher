@@ -31,7 +31,7 @@ To make this type of attack impossible, I make the following changes.
 
 2) If anyone simultaneously pledges to completing forks, their money is erased in both forks.
 
-3) Each node needs a list of public keys that have money, it can look at valid blocks with signatures from these pubkeys. When a node boots up, it downloads the longest blockchain where at least one of the public keys from the list still has money. If some forks have less than 1/2 as much money as the biggest fork, they are ignored.
+3) Each node needs a list of public keys that have money, it can look at valid blocks with signatures from these pubkeys. When a node boots up, it downloads the a blockchain where at least one of the public keys from the list still has money. Forks with more total coins are prefered, forks with more length are prefered.
 
 
 ==========If you are too lazy to read Vitalik's blog entry on slasher, but are still curious of what slasher does=============
@@ -68,5 +68,5 @@ A majority of coin-holders decide to stop a minority from pledging to the real f
 The minority can try to purchase blocks too, and they are willing to spend ALL of their money rather than have it destroyed. The attackers will have to spend even more money than that the victims, and they have to spend it on every single block till the victims die. That is 1000 blocks.
 
 A large number of coin-holders do not pledge to any blockchain, and let their amount of money=M get burned in the same moment.
-This creates a vulnerability in our armour, but the vulnerability wont be a problem till decades or centuries in the future. Once the blockchain has less than 2.3*M total coins, we need to copy/paste how much money everyone has and make a new genesis block. 
+This creates a vulnerability in our armour, but the vulnerability wont be a problem till decades or centuries in the future. Once the blockchain has less than 2*M total coins, then we have cancer, and we lose consensus. So when we only have 2.3*M total coins, we need to copy/paste how much money everyone has and make a new genesis block. 
 

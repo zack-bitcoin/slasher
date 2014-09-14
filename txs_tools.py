@@ -8,7 +8,7 @@ def cost_0(txs, DB):
             total_cost.append(custom.fee)
             total_cost += Tx['amount']
         Do={'spend':spend_,
-            'mint':(lambda: total_cost.append(-custom.block_reward))}
+            'pledge':(lambda: total_cost.append(custom.pledge_fee))}
         Do[Tx['type']]()
     return(sum(total_cost))
 def fee_check(tx, txs, DB):
@@ -23,6 +23,8 @@ def get_(loc, thing):
     if loc==[]: return thing
     return get_(loc[1:], thing[loc[0]])
 def set_(loc, dic, val):
+    if type(loc)!=type([]):
+        loc=[loc]
     get_(loc[:-1], dic)[loc[-1]] = val
     return dic
 def adjust(location, pubkey, DB, f):#location shouldn't be here.
@@ -31,7 +33,7 @@ def adjust(location, pubkey, DB, f):#location shouldn't be here.
     tools.db_put(pubkey, acc, DB)    
 def adjust_int(key, pubkey, amount, DB):
     def f(acc, amount=amount):
-        if not DB['add_block']: amount=-amount
+        if 'add_block' in DB and not DB['add_block']: amount=-amount
         set_(key, acc, (get_(key, acc) + amount))
     adjust(key, pubkey, DB, f)
 def adjust_string(location, pubkey, old, new, DB):
@@ -54,6 +56,9 @@ def adjust_list(location, pubkey, remove, item, DB):
     def f(acc, remove=remove, item=item):
         current=get_(location, acc)
         if remove != (DB['add_block']):# 'xor' and '!=' are the same.
+            if type(current)!=list:
+                print('adjust list error. location: ' +str(location))
+                print('pubkey:  ' +str(pubkey))
             current.append(item)
         else: 
             current.remove(item)

@@ -1,6 +1,6 @@
 """A bunch of functions that are used by multiple threads.
 """
-import pt, hashlib, re, subprocess, time, copy
+import pt, hashlib, re, subprocess, time, copy, custom, sys
 from json import dumps as package, loads as unpackage
 #from collections import OrderedDict
 
@@ -20,6 +20,14 @@ def heart_monitor(queue):
             if beat not in beats:
                 log('adding thread: ' +str(beat))
             beats[beat]=t
+def looper(DB, f, s, t=1):
+    while True:
+        time.sleep(t)
+        DB['heart_queue'].put(s)
+        try:
+            f(DB)
+        except:
+            log(s+' error: ' +str(sys.exc_info()))
 def log(tx):
     with open("log.py", "a") as myfile:
         myfile.write(tx+'\n')
@@ -58,10 +66,16 @@ def base58_encode(num):
     return encode
 def make_address(pubkeys, n):
     """n is the number of pubkeys required to spend from this address."""
+    if type(pubkeys)!=type([]):
+        error('that is not a list')
     return (str(len(pubkeys)) + str(n) +
             base58_encode(det_hash({str(n): pubkeys}))[0:29])
 def buffer_(str_to_pad, size):
     return str_to_pad.rjust(size, '0')
+def target_times_float(target, number):
+    a = int(str(target), 16)
+    b = int(a * number)
+    return str(hex(b))[2: -1]
 def E_check(dic, key, type_):
     if not isinstance(type_, list): type_=[type_]
     if len(type_)==0: return False#to end the recursion.
@@ -92,13 +106,25 @@ def kill_processes_using_ports(ports):
         if match:
             pid = match.group('pid')
             subprocess.Popen(['kill', '-9', pid])
-default_entry={'count': 0, 'amount': 0, 'votecoin':{}, 'votes':{}, 'shares':{}}
+def default_block(n, DB, sig_length=0, txs=[]):
+    return({'length':int(n), 'txs':txs, 'sig_length':sig_length, 'version':custom.version, 'rand_nonce':''})
+def default_entry(DB):
+    return({'count': 0, 'amount': 0, 'votecoin':{}, 'votes':{}, 'shares':{}, 'blacklist':'false', 'expiration': DB['length']+999, 'secrets':[], 'secret_hashes':[]})
+def int_p(n):
+    try:
+        int(n)
+        return True
+    except:
+        return False
 def db_get(n, DB):
     n = str(n)
     try:
         return unpackage(DB['db'].Get(n))
     except:
-        db_put(n, default_entry, DB)
+        if int_p(n):
+            db_put(n, default_block(n, DB), DB)
+        else:
+            db_put(n, default_entry(DB), DB)
         return db_get(n, DB)
 def db_put(key, dic, DB): return DB['db'].Put(str(key), package(dic))
 def db_delete(key, DB): return DB['db'].Delete(str(key))
@@ -106,7 +132,7 @@ def db_existence(key, DB):
     n=str(key)
     try:
         a=unpackage(DB['db'].Get(n))
-        return not a==default_entry
+        return not a==default_entry()
     except:
         return False
 def count(address, DB):
