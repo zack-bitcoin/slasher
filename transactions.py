@@ -1,68 +1,27 @@
 """This file explains how we tell if a transaction is valid or not, it explains
 how we update the database when new transactions are added to the blockchain."""
 import blockchain, custom, copy, tools
+import rationals as rat
 E_check=tools.E_check
-def cost_to_buy_shares(tx, DB):
-    pm=tools.db_get(tx['PM_id'], DB)
-    shares_purchased=pm['shares_purchased']
-    buy=tx['buy']
-    B=pm['B']
-    def C(shares, B): return B*math.log(sum(map(lambda x: math.e**(x/B), shares)))
-    C_old=C(shares_purchased, B)
-    def add(a, b): return a+b
-    C_new=C(map(add, shares_purchased, buy), B)
-    return int(C_new-C_old)
 def cost_0(txs, DB):
     #cost of the zeroth confirmation transactions
     total_cost = []
-    votecoin_cost = {}
     address=tools.db_get('address')
     for Tx in filter(lambda t: address == addr(t), txs):
-        def spend_(total_cost=total_cost, votecoin_cost=votecoin_cost):
-            total_cost.append(custom.fee)
-            if 'vote_id' not in Tx:
-                total_cost += [Tx['amount']]
-            else:
-                if Tx['vote_id'] not in votecoin_cost: 
-                    votecoin_cost[Tx['vote_id']]=0
-                votecoin_cost[Tx['vote_id']]+=Tx['amount']
-        def buy_shares_(total_cost=total_cost):
-            cost = cost_to_buy_shares(Tx, DB)
-            total_cost.append(custom.buy_shares_fee)
-            total_cost.append(cost)
-            total_cost.append(int(abs(cost*0.01)))
+        def spend_(total_cost=total_cost):
+            total_cost.append(Tx['fee'])
+            total_cost += [Tx['amount']]
         Do={'spend':spend_,
-            'mint':(lambda: total_cost.append(-custom.block_reward)), 
-            'create_jury':(lambda: total_cost.append(custom.create_jury_fee)), 
-            'propose_decision':(lambda: total_cost.append(custom.propose_decision_fee)), 
-            'jury_vote':(lambda: total_cost.append(custom.jury_vote_fee)),
-            'reveal_jury_vote':(lambda: total_cost.append(custom.reveal_jury_vote_fee)),
-            'SVD_consensus':(lambda: total_cost.append(custom.SVD_consensus_fee)),
-            'collect_winnings':(lambda: total_cost.append(-custom.collect_winnings_reward)),
-            'buy_shares':buy_shares_,
-            'prediction_market':(lambda: total_cost.append(Tx['B']*math.log(len(Tx['states']))))}
+            'mint':(lambda: total_cost.append(-custom.block_reward))}
         Do[Tx['type']]()
-    return {'truthcoin_cost':sum(total_cost), 'votecoin_cost':votecoin_cost}
+    return rat.to_decimal(rat.sum(total_cost))
 def fee_check(tx, txs, DB):
     address = addr(tx)
     cost_=cost_0(txs+[tx], DB)
-    truthcoin_cost = cost_['truthcoin_cost']
-    votecoin_cost = cost_['votecoin_cost']
     acc=tools.db_get(address, DB)
-    if int(acc['amount']) < truthcoin_cost: 
+    if rat.to_decimal(acc['amount']) < cost_:
         tools.log('insufficient truthcoin')
         return False
-    for v_id in votecoin_cost:
-        if v_id not in acc['votecoin']: 
-            tools.log('votecoin_cost: ' +str(votecoin_cost))
-            tools.log('acc: ' +str(acc))
-            tools.log('0 votecoin: ' +str(v_id))
-            return False
-        if acc['votecoin'][v_id]<votecoin_cost[v_id]: 
-            tools.log(acc['votecoin'][v_id])
-            tools.log(votecoin_cost[v_id])
-            tools.log('not enough votecoin: ' +str(v_id))
-            return False
     return True
 def sigs_match(Sigs, Pubs, msg):
     pubs=copy.deepcopy(Pubs)
@@ -245,6 +204,7 @@ tx_check = {'spend':spend_verify,
             'slasher_early_reveal':slasher_early_reveal_verify,
             'slasher_double_sign':slasher_double_sign_verify}
 #------------------------------------------------------
+import rationals as rat
 def get_(loc, thing): 
     if loc==[]: return thing
     return get_(loc[1:], thing[loc[0]])
@@ -257,8 +217,8 @@ def adjust(pubkey, DB, f):#location shouldn't be here.
     tools.db_put(pubkey, acc, DB)    
 def adjust_int(key, pubkey, amount, DB, add_block):
     def f(acc, amount=amount):
-        if not add_block: amount=-amount
-        set_(key, acc, (get_(key, acc) + amount))
+        if not add_block: amount=rat.neg(amount)
+        set_(key, acc, (rat.plus(get_(key, acc), amount)))
     adjust(pubkey, DB, f)
 def adjust_string(location, pubkey, old, new, DB, add_block):
     def f(acc, old=old, new=new):
@@ -290,9 +250,9 @@ def symmetric_put(id_, dic, DB, add_block):
     else: tools.db_delete(id_, DB)
 def spend(tx, DB, add_block):
     address = tools.addr(tx)
-    adjust_int(['amount'], address, -tx['amount'], DB, add_block)
+    adjust_int(['amount'], address, rat.neg(tx['amount']), DB, add_block)
     adjust_int(['amount'], tx['to'], tx['amount'], DB, add_block)
-    adjust_int(['amount'], address, -custom.fee, DB, add_block)
+    adjust_int(['amount'], address, rat.neg(custom.fee), DB, add_block)
     adjust_int(['count'], address, 1, DB, add_block)
 def sign(tx, DB):
     address = tools.addr(tx)
