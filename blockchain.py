@@ -7,9 +7,11 @@ import networking
 import transactions
 import sys
 import tools
-import txs_tools
-import multiprocessing
+import target
+
 def add_tx(tx, DB):
+    # Attempt to add a new transaction into the pool.
+    #print('top of add_tx')
     out=['']
     if type(tx) != type({'a':1}): 
         return False
@@ -19,6 +21,8 @@ def add_tx(tx, DB):
     def type_check(tx, txs):
         if not tools.E_check(tx, 'type', [str, unicode]):
             out[0]+='blockchain type'
+            return False
+        if tx['type'] == 'mint':
             return False
         if tx['type'] not in transactions.tx_check:
             out[0]+='bad type'
@@ -39,54 +43,89 @@ def add_tx(tx, DB):
         if too_big_block(tx, txs):
             out[0]+='too many txs'
             return False
-        if not transactions.tx_check[tx['type']](tx, txs, DB):
-            out[0]+='update transactions.py to find out why. print statements are no good. ' +str(tx)
+        if not transactions.tx_check[tx['type']](tx, txs, out, DB):
+            out[0]+= 'tx: ' + str(tx)
             return False
         return True
-    if verify_tx(tx, DB['txs'], out):
-        DB['txs'].append(tx)
+    #tools.log('attempt to add tx: ' +str(tx))
+    T=tools.db_get('txs')
+    if verify_tx(tx, T, out):
+        T.append(tx)
+        tools.db_put('txs', T)
         return('added tx: ' +str(tx))
     else:
         return('failed to add tx because: '+out[0])
+def recent_blockthings(key, DB, size, length=0):
+    storage = tools.db_get(key)
+    def get_val(length):
+        leng = str(length)
+        if not leng in storage:            
+            try:
+                storage[leng] = tools.db_get(leng, DB)[key[:-1]]
+            except:
+                print('leng: ' +str(leng))
+                print('key: ' +str(key))
+                print('db_get: ' +str(tools.db_get(leng, DB)))
+                print('storage: ' +str(storage))
+                error()
+            tools.db_put(key, storage)
+        return storage[leng]
+    def clean_up(storage, end):
+        if end<0: return
+        if not str(end) in storage: return
+        else:
+            storage.pop(str(end))
+            return clean_up(storage, end-1)
+    if length == 0:
+        length = tools.db_get('length')
+    start = max((length-size), 0)
+    clean_up(storage, length-max(custom.mmm, custom.history_length)-100)
+    return map(get_val, range(start, length))
 def add_block(block_pair, DB):
-    """Attempts adding a new block to the blockchain."""
-    if DB['length']<-1: return False
+    """Attempts adding a new block to the blockchain.
+     Median is good for weeding out liars, so long as the liars don't have 51%
+     hashpower. """
+    def median(mylist):
+        if len(mylist) < 1:
+            return 0
+        return sorted(mylist)[len(mylist) / 2]
+
     def block_check(block, DB):
+        #put a check to see if we can afford to purchase this block.
+        def log_(txt): pass #return tools.log(txt)
         def tx_check(txs):
             start = copy.deepcopy(txs)
-            out=[]
-            while len(start)>0:
-                if transactions.tx_check[start[-1]['type']](start[-1], out, DB):
+            out = []
+            start_copy = []
+            while start != start_copy:
+                if start == []:
+                    return False  # Block passes this test
+                start_copy = copy.deepcopy(start)
+                if transactions.tx_check[start[-1]['type']](start[-1], out, [''], DB):
                     out.append(start.pop())
                 else:
-                    tools.log('bad block-tx error: '+str(start[-1]))
-                    tools.log('in block: ' +str(block_pair))
-                    return True
+                    return True  # Block is invalid
+            return True  # Block is invalid
+        if not isinstance(block, dict): return False
+        if 'error' in block: return False
+        if not tools.E_check(block, 'length', [int]):
+            log_('no length')
             return False
-        if not isinstance(block, dict):
-            tools.log('bad block is not dict')
+        length =tools.db_get('length')
+        if type(block['length'])!=type(1): 
+            log_('wrong length type')
             return False
-        if 'error' in block:
-            tools.log('bad block error error')
-            return False
-        if 'length' not in block:
-            tools.log('no length')
-            return False
-        length = DB['length']
         if int(block['length']) != int(length) + 1:
-            tools.log('block: ' +str(block))
-            tools.log('length: ' +str(length))
-            tools.log('wrong length')
+            log_('wrong longth')
             return False
         if length >= 0:
-            prev_block=tools.db_get(DB['length'], DB)
-            if block['rand_nonce']!=tools.det_hash(prev_block['rand_nonce']+tools.package(block['txs'])):
-                tools.log('does not refernce previous block')
+            if tools.det_hash(tools.db_get(length, DB)) != block['prevHash']:
+                log_('det hash error')
                 return False
-        if tx_check(block['txs']):
-            tools.log('fails on a tx')
+        #there should be at least 1/2 of all the signers signatures onto the previous block, otherwise this block isn't valid.
+        if tx_check(block['txs']): 
+            log_('tx check')
             return False
-        #should fail if the creator of the block cannot afford it
         return True
     if type(block_pair)==type([1,2,3]):
         block=block_pair[0]
@@ -94,100 +133,78 @@ def add_block(block_pair, DB):
     else:
         block=block_pair
         peer=False
+    #tools.log('attempt to add block: ' +str(block))
     if block_check(block, DB):
-        if peer != False:
-            talk_to_this_peer_more_frequently(peer)
-        orphans = copy.deepcopy(DB['txs'])
-        DB['txs'] = []
-        update_chain(block, DB)
-        txs_tools.adjust_int(['amount'], tools.addr(block), -custom.block_fee, DB)
-        if DB['length']>=2000:
-            old_block=tools.db_get(DB['length']-2000, DB)
-            old_chain(lambda DB: update_chain(old_block, DB), DB)
+        #tools.log('add_block: ' + str(block))
+        old_length=tools.db_get('length')
+        gap=block['length']-old_length-1
+        tools.db_put(block['length'], block)
+        tools.db_put('length', block['length'])
+        orphans = tools.db_get('txs')
+        tools.db_put('txs', [])
+        txs_tools.adjust_int(['amount'], tools.addr(block), -custom.block_fee*2**gap, DB)
+        for tx in block['txs']:
+            transactions.update[tx['type']](tx, DB, True)
         for tx in orphans:
             add_tx(tx, DB)
-def old_chain(f, DB):
-    #if DB['length']<2000:
-    #    return({'error', 'not long enough yet'})
-    l=multiprocessing.Lock()
-    l.acquire()
-    DB['db_new']=DB['db']
-    DB['db']=DB['old_db']
-    DB['length']-=2000
-    try:
-        out=f(DB)
-    except:
-        out={'error':'old chain error'}
-    DB['old_db']=DB['db']
-    DB['db']=DB['db_new']
-    DB['length']+=2000
-    l.release()
-    return out
-def talk_to_this_peer_more_frequently(peer):
-    i=0
-    j='empty'
-    for p in DB['peers_ranked']:
-        if p[0]==peer:
-            j=i
-        i+=1
-    if j!='empty':
-        DB['peers_ranked'][j][1]*=0.1#listen more to people who have newer blocks.
-    else:
-        #maybe this peer should be added to our list of peers?
-        pass
-def update_chain(block, DB):
-    tools.db_put(block['length'], block, DB)
-    #take money away from the person who created the block
-    '''
-    if block['length']!=DB['length']+1:
-        print('block: ' +str(block))
-        print('DB: ' +str(DB))
-        print('bool: ' +str(block['length']!=DB['length']+1))
-        print('first: ' +str(block['length']))
-        print('second: ' +str(DB['length']+1))
-        print('first: ' +str(type(block['length'])))
-        print('second: ' +str(type(DB['length']+1)))
-        error('here')
-    '''
-    for tx in block['txs']:
-        DB['add_block']=True
-        transactions.update[tx['type']](tx, DB)
-    DB['length'] = block['length']
-def downdate_chain(DB):
-    #give money to the person who created the block
-    block=tools.db_get(DB['length'], DB)
-    for tx in block['txs']:
-        orphans.append(tx)
-        DB['add_block']=False
-        transactions.update[tx['type']](tx, DB)
-    tools.db_delete(DB['length'], DB)
-    DB['length'] -= 1
 def delete_block(DB):
     """ Removes the most recent block from the blockchain. """
-    if DB['length'] < 0:
+    length=tools.db_get('length')
+    if length < 0:
         return
-    block = tools.db_get(DB['length'], DB)
-    orphans = copy.deepcopy(DB['txs'])
-    DB['txs'] = []
-    if DB['length']>=2000:
-        old_chain(lambda DB: downdate_chain(DB), DB)
-    downdate_chain(DB)
-    #bothchains(DB, downdate_chain, block)
-    txs_tools.adjust_int(['amount'], tools.addr(block), -custom.block_fee, DB)
+    try:
+        ts=tools.db_get('targets')
+        ts.pop(str(length))
+        tools.db_put('targets', ts)
+    except:
+        pass
+    try:
+        ts=tools.db_get('times')
+        ts.pop(str(length))
+        tools.db_put('times', ts)
+    except:
+        pass
+    block = tools.db_get(length, DB)
+    prev_block = tools.db_get(length-1, DB)
+    gap=bloc['length']-prev_block['length']-1
+    orphans = tools.db_get('txs')
+    tools.db_put('txs', [])
+    txs_tools.adjust_int(['amount'], tools.addr(block), custom.block_fee*2**gap, DB)
+    for tx in block['txs']:
+        orphans.append(tx)
+        tools.db_put('add_block', False)
+        transactions.update[tx['type']](tx, DB, False)
+    tools.db_delete(length, DB)
+    length-=1
+    tools.db_put('length', length)
+    if length == -1:
+        tools.db_put('diffLength', '0')
+    else:
+        block = tools.db_get(length, DB)
+        tools.db_put('diffLength', block['diffLength'])
     for orphan in sorted(orphans, key=lambda x: x['count']):
         add_tx(orphan, DB)
-def suggestions(DB, s, f):
+def f(blocks_queue, txs_queue, heart_queue, DB):
+    def bb(): return blocks_queue.empty()
+    def tb(): return txs_queue.empty()
+    def ff(queue, g, b, s):
+        while not b():
+            time.sleep(0.0001)
+            try:
+                g(queue.get(False), DB)
+            except:
+                tools.log('suggestions ' + s + ' '+str(sys.exc_info()))
+    heart_time=time.time()
+    t0=time.time()
     while True:
-        DB['heart_queue'].put(s)
-        for i in range(100):
-            time.sleep(0.01)
-            if DB['stop']: return
-            if not DB[s].empty():
-                try:
-                    f(DB[s].get(False), DB)
-                except:
-                    tools.log('suggestions ' + s + ' '+str(sys.exc_info()))
-def suggestion_txs(DB): 
-    return suggestions(DB, 'suggested_txs', add_tx)
-def suggestion_blocks(DB): 
-    return suggestions(DB, 'suggested_blocks', add_block)
+        time.sleep(0.5)
+        if tools.db_get('stop'): return
+        while not bb() or not tb():
+            t=time.time()
+            if t-heart_time>10:
+                heart_time=t
+            ff(blocks_queue, add_block, bb, 'block')
+            ff(txs_queue, add_tx, tb, 'tx')
+def main(DB):
+    return f(DB['suggested_blocks'], DB['suggested_txs'], DB['heart_queue'], DB)
+    
