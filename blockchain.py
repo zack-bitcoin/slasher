@@ -100,6 +100,7 @@ def add_block(block_pair, DB={}):
     def block_check(block, DB):
         def log_(txt): return tools.log(txt)
         def tx_check(txs):
+            if len(txs)==0: return False
             start = copy.deepcopy(txs)
             out = []
             start_copy = []
@@ -125,11 +126,19 @@ def add_block(block_pair, DB={}):
         if int(block['length']) != int(length) + 1:
             log_('wrong longth')
             return False
+        txs=filter(lambda x: x['type']=='sign', block['txs'])
+        txs=map(lambda x: len(x['jackpots']), txs)
+        if length>3000:
+            if sum(txs)<custom.signers*2/3:
+                log_('not enough signatures')
+                return False
         if length >= 0:
+            prev_block=tools.db_get(length)
             to_hash=prev_block['block_hash']+tools.package(block['txs'])
-            if block['block_hash']==tools.det_hash(to_hash):
+            if not block['block_hash']==tools.det_hash(to_hash):
                 log_('det hash error')
                 return False
+        #total money spent must be less than the total amount of money in signed deposits for this block.
         if tx_check(block['txs']): 
             log_('tx check')
             return False
@@ -145,7 +154,6 @@ def add_block(block_pair, DB={}):
         tools.log('add_block: ' + str(block))
         tools.db_put(block['length'], block, DB)
         tools.db_put('length', block['length'])
-        tools.db_put('diffLength', block['diffLength'])
         orphans = tools.db_get('txs')
         tools.db_put('txs', [])
         for tx in block['txs']:

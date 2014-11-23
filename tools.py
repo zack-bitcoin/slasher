@@ -2,11 +2,9 @@
 """
 import pt, hashlib, re, subprocess, time, copy, networking, custom, logging, random
 from json import dumps as package, loads as unpackage
-try:
-    from cdecimal import Decimal
-except:
-    from decimal import Decimal
 #print(json.dumps(x, indent=3, sort_keys=True))  for pretty printing
+def int2hash(a): return buffer_(str(hex(a))[2:], 64)
+def hash2int(a): return int(str(a), 16)
 def cost_0(txs, address):
     #cost of the zeroth confirmation transactions
     total_cost = []

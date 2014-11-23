@@ -1,5 +1,13 @@
 """This file explains how we tell if a transaction is valid or not, it explains
 how we update the database when new transactions are added to the blockchain."""
+
+#steps
+#K-3100 to K-3000: seeds to elect signer
+#K-2000: signers for block K are now aware of their responsibility.
+#K: sign on block and make a deposit
+#K+100 to K+1000: reveal secret
+#K+3000 to K+3100: get reward
+#K to K+3000: it is possible to slasher the deposit
 import blockchain, custom, copy, tools
 E_check=tools.E_check
 def sigs_match(Sigs, Pubs, msg):
@@ -61,10 +69,71 @@ def spend_verify(tx, txs, out, DB):
             out[0]+='cannot hold votecoins in a multisig address'
             return False
     return True
-def mint_verify(tx, txs, out, DB):
-    return 0 == len(filter(lambda t: t['type'] == 'mint', txs))
+def sign_verify(tx, DB, add_block):
+    a=tools.addr(tx)
+    B=tools.db_get(a)['amount']
+    M=custom.all_money
+    #B is balance from 1000 blocks ago.
+    if len(tx['jackpots'])<1: 
+        tools.log('insufficient jackpots')
+        return False
+    if not signature_check(tx):
+        out[0]+='signature check'
+        return False
+    length=db_get('length')
+    if tx['on_block']!=length+1:
+        tools.log('this tx is for the wrong block')
+        return False
+    if tx['recent_count']>=length or tx['recent_count']<length-20:
+        tools.log('recent hash should be in 20 most recent blocks')
+        return False
+    if not tx['recent_hash']==db_get(tx['recent_count'])['block_hash']:
+        tools.log('must give hash of recent block')
+        return False
+    ran=[]
+    for i in range(custom.short_length):
+        a=tx['on_block']-custom.long_length-i
+        if a<3000:
+            ran.append(a)
+        else:
+            a=db_get(a)
+            ran.append(a['secrets'])
+    ran=tools.det_hash(ran)
+    for j in tx['jackpots']:
+        if type(j)!=int or j not in range(200):
+               tools.log('bad jackpot')
+               return False
+        if len(filter(lambda x: x==j, tx['jackpots']))!=1:
+               tools.log('no repeated jackpots')
+               return False
+        b=tools.hash2int('f'*64)*64*B/(200*M)
+        a=tools.hash2int(tools.det_hash(ran+my_address+[j]))
+        if not a < b:
+            tools.log('that jackpot is not valid: '+str(j))
+            return False
+    if tx['amount']<custom.minimum_deposit:
+        tools.log('you have to deposit more than that')
+        return False
+    return True
+def reveal_verify(tx, DB, add_block):
+    #make sure they did a sign transaction in the correct block.
+    #make sure it matches.
+    pass
+def slasher_verify(tx, DB, add_block):
+    #were the rewards paid out already?
+    #are both tx valid?
+    #do they both sign on the same length?
+    #are the tx identical?
+    pass
+def reward_verify(tx, DB, add_block):
+    #make sure they revealed.
+    #make sure they were not slashed.
+    #reward is proportional to percentage of total deposit.
+    pass
 tx_check = {'spend':spend_verify,
-            'mint':mint_verify}
+            'sign':sign_verify,
+            'slasher':slasher_verify,
+            'reward':reward_verify}
 '''
 1) give signer's deposit
 *reward is proportional to deposit size.
@@ -89,5 +158,28 @@ def spend(tx, DB, add_block):
     adjust_int(['amount'], tx['to'], tx['amount'], DB, add_block)
     adjust_int(['amount'], address, -custom.fee, DB, add_block)
     adjust_int(['count'], address, 1, DB, add_block)
-update = {'mint':mint,
-          'spend':spend}
+def sign(tx, DB, add_block):
+    address = tools.addr(tx)
+    adjust_int(['amount'], address, -tx['amount'], DB, add_block)
+    adjust_int(['amount'], address, -custom.deposit_fee, DB, add_block)
+    adjust_int(['count'], address, 1, DB, add_block)
+    #record somewhere. maybe on the block in the future?
+def reveal(tx, DB, add_block):
+    address = tools.addr(tx)
+    adjust_int(['count'], address, 1, DB, add_block)
+def slasher(tx, DB, add_block):
+    address = tools.addr(tx)
+    adjust_int(['count'], address, 1, DB, add_block)
+    #destroy the deposit. give a portion of it as a reward to the person who caught the criminal.
+    #record
+def reward(tx, DB, add_block):
+    address = tools.addr(tx)
+    adjust_int(['count'], address, 1, DB, add_block)
+    #if they successfully signed, then reward them. otherwise punish them by taking 2 times the reward from their deposit, and returning the rest to them.
+    #record
+    pass
+update = {'spend':spend,
+          'sign':sign,
+          'reveal':reveal,
+          'slasher':slasher,
+          'reward':reward}

@@ -103,6 +103,7 @@ def buy_block(DB, args):
     block=default_block(length+1, tools.db_get('txs'))
     to_hash=''
     if length>-1: to_hash=prev_block['block_hash']+tools.package(block['txs'])
+    tools.log('to hash 1: ' +str(to_hash))
     block['block_hash']=tools.det_hash(to_hash)
     block=sign_tx(block)
     block = tools.unpackage(tools.package(block))
