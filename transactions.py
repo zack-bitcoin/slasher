@@ -75,6 +75,9 @@ def sign_verify(tx, txs, out, DB):
     M=custom.all_money
     address=tools.addr(tx)
     #B is balance from 3000 blocks ago.
+    if 'secret_hash' not in tx:
+        tools.log('need the hash of a secret')
+        return False
     for t in txs:
         if tools.addr(t)==address:
             tools.log('can only have one sign tx per block')

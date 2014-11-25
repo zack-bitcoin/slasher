@@ -16,9 +16,10 @@ fee = 10 ** 3
 signers=64
 # Lower limits on what the "time" tag in a block can say.
 #get rid of decimal.
-long_time=3000
-medium_time=1000
-short_time=100
+#for vitalik's slasher, 3000, 1000, 100
+long_time=18
+medium_time=6
+short_time=2
 maximum_deposit=all_money/signers/long_time/2
 minimum_deposit=maximum_deposit/100
 deposit_fee = 10 ** 3

@@ -7,7 +7,7 @@ def sign_tx(tx, privkey=0):
         privkey=tools.db_get('privkey')
     tx['signatures']=[tools.sign(tools.det_hash(tx), privkey)]
     return tx
-def easy_add_transaction(tx_orig, DB, privkey='default'):
+def easy_add_transaction(tx_orig, DB={}, privkey='default'):
     tx = copy.deepcopy(tx_orig)
     if privkey in ['default', 'Default']:
         if tools.db_existence('privkey'):
@@ -103,8 +103,7 @@ def buy_block(DB, args):
     prev_block=tools.db_get(length)
     block=default_block(length+1, tools.db_get('txs'))
     to_hash=''
-    if length>-1: to_hash=prev_block['block_hash']+tools.package(block['txs'])
-    tools.log('to hash 1: ' +str(to_hash))
+    if length>-1: to_hash={'prev':prev_block['block_hash'], 'txs':block['txs']}
     block['block_hash']=tools.det_hash(to_hash)
     block=sign_tx(block)
     block = tools.unpackage(tools.package(block))

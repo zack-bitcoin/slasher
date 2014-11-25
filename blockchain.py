@@ -133,7 +133,7 @@ def add_block(block_pair, DB={}):
             return False
         if length >= 0:
             prev_block=tools.db_get(length)
-            to_hash=prev_block['block_hash']+tools.package(block['txs'])
+            to_hash={'prev':prev_block['block_hash'], 'txs':block['txs']}
             if not block['block_hash']==tools.det_hash(to_hash):
                 log_('det hash error')
                 return False
@@ -160,7 +160,7 @@ def add_block(block_pair, DB={}):
         for tx in orphans:
             add_tx(tx, DB)
         proofs=tools.db_get('balance_proofs')
-        proofs.append(tools.db_prove(tools.db_get('address')))
+        proofs.append(tools.db_proof(tools.db_get('address')))
         tools.db_put('balance_proofs', proofs)
         #while tools.db_get('length')!=block['length']:
         #    time.sleep(0.0001)

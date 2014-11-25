@@ -62,7 +62,7 @@ def run_command(p):
     response=connect(p)
     if is_off(response):
         print('blockchain is probably off. Use command: "./cli.py start" to turn it on.')
-    return response
+    return tools.package(response, indent=2, sort_keys=True)
 
 if __name__=='__main__':
     print(main())

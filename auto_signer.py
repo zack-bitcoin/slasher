@@ -1,5 +1,6 @@
-import transactions, tools, custom, time, sys, api
-def create_sign_tx(on_block):
+import transactions, tools, custom, time, sys, api, random
+def create_sign_tx():
+    on_block=tools.db_get('length')+1
     r=transactions.det_random(on_block)
     jackpots=[]
     address=tools.db_get('address')
@@ -15,6 +16,11 @@ def create_sign_tx(on_block):
         tools.log('balance: ' +str(a))
         proof=a[max(on_block-custom.long_time, 0)]
         tx={'on_block':on_block, 'proof':proof, 'jackpots':jackpots, 'type':'sign', 'amount':M/3000/3}
+        secret=str(random.random())+str(random.random())
+        secrets=tools.db_get('secrets')
+        secrets[str(on_block)]=secret
+        tools.db_put('secrets', secrets)
+        tx['secret_hash']=tools.det_hash(secret)
         if on_block>0:
             tx['prev_hash']=tools.db_get(on_block-1)['block_hash']
     else:
@@ -24,12 +30,12 @@ def create_sign_tx(on_block):
 def mainloop():
     while True:
         time.sleep(2)
-        length=tools.db_get('length')
         txs=tools.db_get('txs')
         address=tools.db_get('address')
         txs=filter(lambda x: address==tools.addr(x), txs)
         txs=filter(lambda x: x['type']=='sign', txs)
         if len(txs)==0:
-            api.easy_add_transaction(create_sign_tx(length+1), {})
-
+            api.easy_add_transaction(create_sign_tx())
+        else:
+            time.sleep(0.1)
 

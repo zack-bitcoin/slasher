@@ -127,6 +127,8 @@ def privtopub(privkey): return pt.privtopub(privkey)
 def hash_(x): return hashlib.sha384(x).hexdigest()[0:64]
 def det_hash(x):
     """Deterministically takes sha256 of dict, list, int, or string."""
+    #x=unpackage(package(x))
+    #log('in det hash: ' +str(package(x, sort_keys=True)))
     return hash_(package(x, sort_keys=True))
 def POW(block):
     #halfHash = det_hash(block)
