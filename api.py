@@ -25,7 +25,8 @@ def easy_add_transaction(tx_orig, DB, privkey='default'):
         tx['pubkeys']=[pubkey]
     if 'signatures' not in tx:
         tx=sign_tx(tx, privkey)
-    return(blockchain.add_tx(tx, DB))
+    custom.DB['suggested_txs'].put(tx)
+    return('success')#blockchain.add_tx(tx, DB))#this is a mistake. It should append to the queue instead.
 def help_(DB, args):      
     tell_about_command={
         'help':'type "./cli.py help <cmd>" to learn about <cmd>. type "./cli.py commands" to get a list of all commands',

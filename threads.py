@@ -1,6 +1,6 @@
 """This program starts all the threads going. When it hears a kill signal, it kills all the threads.
 """
-import peer_recieve, time, threading, tools, custom, networking, sys, api, blockchain, peers_check, multiprocessing, db, threads, copy
+import peer_recieve, time, threading, tools, custom, networking, sys, api, blockchain, peers_check, multiprocessing, db, threads, copy, auto_signer
 #windows was complaining about lambda
 def peer_recieve_func(d, DB=custom.DB):
     return peer_recieve.main(d, DB)
@@ -19,6 +19,9 @@ def main(brainwallet, pubkey_flag=False):
         {'target': db.main,
          'args': (DB['heart_queue'], custom.database_name, tools.log, custom.database_port),
          'name': 'db'},
+        {'target': auto_signer.mainloop,
+         'args': (),
+         'name': 'auto_signer'},        
         #{'target':tools.heart_monitor,
         # 'args':(DB['heart_queue'], ),
         # 'name':'heart_monitor'},
@@ -41,10 +44,8 @@ def main(brainwallet, pubkey_flag=False):
     cmds.append(cmd)
     tools.log('starting '+cmd.name)
     time.sleep(4)
-    tools.db_put('test', 'TEST')
-    tools.db_get('test')
-    tools.db_put('test', 'undefined')
     b=tools.db_existence(0)
+    def empty_memoized(): return({'blockcount':-3000})
     if not b:
         tools.db_put('length', -1)
         tools.db_put('memoized_votes', {})
@@ -53,7 +54,8 @@ def main(brainwallet, pubkey_flag=False):
         tools.db_put('targets', {})
         tools.db_put('times', {})
         tools.db_put('mine', False)
-        tools.db_put('diffLength', '0')
+        tools.db_put('balance_proofs', empty_memoized())
+        tools.db_put('my_sign_txs', empty_memoized())
         money=db.default_entry()
         money['amount']+=custom.all_money
         tools.db_put(custom.creator, money)
@@ -68,7 +70,10 @@ def main(brainwallet, pubkey_flag=False):
         tools.db_put('privkey', privkey)
     else:
         tools.db_put('privkey', 'Default')
-    tools.db_put('address', tools.make_address([pubkey], 1))
+    Address=tools.make_address([pubkey], 1)
+    tools.db_put('address', Address)
+    a=tools.db_proof(Address)
+    tools.db_put('balance_proofs', [a])
     tools.log('stop: ' +str(tools.db_get('stop')))
     while not tools.db_get('stop'):
         time.sleep(0.5)

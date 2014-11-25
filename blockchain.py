@@ -128,10 +128,9 @@ def add_block(block_pair, DB={}):
             return False
         txs=filter(lambda x: x['type']=='sign', block['txs'])
         txs=map(lambda x: len(x['jackpots']), txs)
-        if length>3000:
-            if sum(txs)<custom.signers*2/3:
-                log_('not enough signatures')
-                return False
+        if sum(txs)<custom.signers*2/3:
+            log_('not enough signatures')
+            return False
         if length >= 0:
             prev_block=tools.db_get(length)
             to_hash=prev_block['block_hash']+tools.package(block['txs'])
@@ -160,6 +159,9 @@ def add_block(block_pair, DB={}):
             transactions.update[tx['type']](tx, DB, True)
         for tx in orphans:
             add_tx(tx, DB)
+        proofs=tools.db_get('balance_proofs')
+        proofs.append(tools.db_prove(tools.db_get('address')))
+        tools.db_put('balance_proofs', proofs)
         #while tools.db_get('length')!=block['length']:
         #    time.sleep(0.0001)
 

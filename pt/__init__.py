@@ -1,4 +1,2 @@
-from main import *
-from transaction import *
-from deterministic import *
-from bci import *
+from main import privtopub, ecdsa_sign, ecdsa_verify
+

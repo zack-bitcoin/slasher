@@ -24,7 +24,7 @@ def main(heart_queue, database_name, logf, database_port):
             patty.delete(str(args[0]))
         except:#we should make sure this is the type of error we are expecting.
             pass
-    def proof(args): return patty.proof(args[0])
+    def proof(args): return patty.prove(args[0])
     def verify(args):#root, key, proof
         return patty.verify(args[0], args[1], args[2])
     def root(args): return patty.root()

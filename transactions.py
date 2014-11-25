@@ -69,36 +69,33 @@ def spend_verify(tx, txs, out, DB):
             out[0]+='cannot hold votecoins in a multisig address'
             return False
     return True
-def sign_verify(tx, DB, add_block):
+def sign_verify(tx, txs, out, DB):
     a=tools.addr(tx)
     B=tools.db_get(a)['amount']
     M=custom.all_money
-    #B is balance from 1000 blocks ago.
+    address=tools.addr(tx)
+    #B is balance from 3000 blocks ago.
+    for t in txs:
+        if tools.addr(t)==address:
+            tools.log('can only have one sign tx per block')
+            return False
     if len(tx['jackpots'])<1: 
         tools.log('insufficient jackpots')
         return False
     if not signature_check(tx):
         out[0]+='signature check'
         return False
-    length=db_get('length')
+    length=tools.db_get('length')
     if tx['on_block']!=length+1:
         tools.log('this tx is for the wrong block')
+        tools.log('tx: ' +str(tx))
+        tools.log('should be: ' +str(length+1))
         return False
-    if tx['recent_count']>=length or tx['recent_count']<length-20:
-        tools.log('recent hash should be in 20 most recent blocks')
-        return False
-    if not tx['recent_hash']==db_get(tx['recent_count'])['block_hash']:
-        tools.log('must give hash of recent block')
-        return False
-    ran=[]
-    for i in range(custom.short_length):
-        a=tx['on_block']-custom.long_length-i
-        if a<3000:
-            ran.append(a)
-        else:
-            a=db_get(a)
-            ran.append(a['secrets'])
-    ran=tools.det_hash(ran)
+    if tx['on_block']>0:
+        if not tx['prev_hash']==tools.db_get(length)['block_hash']:
+            tools.log('must give hash of previous block')
+            return False
+    ran=det_random(tx['on_block'])
     for j in tx['jackpots']:
         if type(j)!=int or j not in range(200):
                tools.log('bad jackpot')
@@ -106,26 +103,38 @@ def sign_verify(tx, DB, add_block):
         if len(filter(lambda x: x==j, tx['jackpots']))!=1:
                tools.log('no repeated jackpots')
                return False
-        b=tools.hash2int('f'*64)*64*B/(200*M)
-        a=tools.hash2int(tools.det_hash(ran+my_address+[j]))
-        if not a < b:
+        if not winner(B, M, ran, address, j):
             tools.log('that jackpot is not valid: '+str(j))
             return False
     if tx['amount']<custom.minimum_deposit:
         tools.log('you have to deposit more than that')
         return False
     return True
-def reveal_verify(tx, DB, add_block):
+def det_random(length):
+    ran=[]
+    for i in range(custom.short_time):
+        a=length-custom.long_time-i
+        if a<3000:
+            ran.append(a)
+        else:
+            a=tools.db_get(a)
+            ran.append(a['secrets'])
+    return tools.det_hash(ran)
+def winner(B, M, ran, my_address, j):
+    b=tools.hash2int('f'*64)*64*B/(200*M)
+    a=tools.hash2int(tools.det_hash(str(ran)+str(my_address)+str([j])))
+    return a<b
+def reveal_verify(tx, txs, out, DB):
     #make sure they did a sign transaction in the correct block.
     #make sure it matches.
     pass
-def slasher_verify(tx, DB, add_block):
+def slasher_verify(tx, txs, out, DB):
     #were the rewards paid out already?
     #are both tx valid?
     #do they both sign on the same length?
     #are the tx identical?
     pass
-def reward_verify(tx, DB, add_block):
+def reward_verify(tx, txs, out, DB):
     #make sure they revealed.
     #make sure they were not slashed.
     #reward is proportional to percentage of total deposit.
