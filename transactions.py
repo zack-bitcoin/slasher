@@ -2,10 +2,9 @@
 how we update the database when new transactions are added to the blockchain."""
 
 #steps
-#K-3100 to K-3000: seeds to elect signer
-#K-2000: signers for block K are now aware of their responsibility.
+#K-3000: based on how much money you had at this point in time
+#K-2000: using random numbers from this point in time
 #K: sign on block and make a deposit
-#K+100 to K+1000: reveal secret
 #K+3000 to K+3100: get reward
 #K to K+3000: it is possible to slasher the deposit
 import blockchain, custom, copy, tools
@@ -78,6 +77,9 @@ def sign_verify(tx, txs, out, DB):
     if 'secret_hash' not in tx:
         tools.log('need the hash of a secret')
         return False
+    if 'entropy' not in tx or tx['entropy'] not in [0, 1]:
+        tools.log('needs a bit of entropy')
+        return False
     for t in txs:
         if tools.addr(t)==address:
             tools.log('can only have one sign tx per block')
@@ -113,24 +115,28 @@ def sign_verify(tx, txs, out, DB):
         tools.log('you have to deposit more than that')
         return False
     return True
-def det_random(length):
+def det_random(length):#this is very slow. we should memoize entropy somewhere.
+    def mean(l): return sorted(l)[len(l)/2]
     ran=[]
-    for i in range(custom.short_time):
-        a=length-custom.long_time-i
-        if a<3000:
+    m=custom.long_time-custom.medium_time
+    for i in range(custom.medium_time/2):
+        a=length-m-i
+        if a<0:
             ran.append(a)
         else:
             a=tools.db_get(a)
-            ran.append(a['secrets'])
-    return tools.det_hash(ran)
+            ran.append(a['entropy'])
+    out=[]
+    while ran!=[]:
+        a=min(17, len(ran))
+        l=ran[0:a]
+        ran=ran[a:]
+        out.append(mean(l))
+    return tools.det_hash(out)
 def winner(B, M, ran, my_address, j):
     b=tools.hash2int('f'*64)*64*B/(200*M)
     a=tools.hash2int(tools.det_hash(str(ran)+str(my_address)+str([j])))
     return a<b
-def reveal_verify(tx, txs, out, DB):
-    #make sure they did a sign transaction in the correct block.
-    #make sure it matches.
-    pass
 def slasher_verify(tx, txs, out, DB):
     #were the rewards paid out already?
     #are both tx valid?
@@ -160,10 +166,6 @@ adjust_int=tools.adjust_int
 adjust_dict=tools.adjust_dict
 adjust_list=tools.adjust_list
 symmetric_put=tools.symmetric_put
-def mint(tx, DB, add_block):
-    address = tools.addr(tx)
-    adjust_int(['amount'], address, custom.block_reward, DB, add_block)
-    adjust_int(['count'], address, 1, DB, add_block)
 def spend(tx, DB, add_block):
     address = tools.addr(tx)
     adjust_int(['amount'], address, -tx['amount'], DB, add_block)
@@ -176,9 +178,6 @@ def sign(tx, DB, add_block):
     adjust_int(['amount'], address, -custom.deposit_fee, DB, add_block)
     adjust_int(['count'], address, 1, DB, add_block)
     #record somewhere. maybe on the block in the future?
-def reveal(tx, DB, add_block):
-    address = tools.addr(tx)
-    adjust_int(['count'], address, 1, DB, add_block)
 def slasher(tx, DB, add_block):
     address = tools.addr(tx)
     adjust_int(['count'], address, 1, DB, add_block)
@@ -192,6 +191,5 @@ def reward(tx, DB, add_block):
     pass
 update = {'spend':spend,
           'sign':sign,
-          'reveal':reveal,
           'slasher':slasher,
           'reward':reward}

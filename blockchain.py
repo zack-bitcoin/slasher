@@ -138,6 +138,9 @@ def add_block(block_pair, DB={}):
                 log_('det hash error')
                 return False
         #total money spent must be less than the total amount of money in signed deposits for this block.
+        if not block['entropy']==tools.entropy(block['txs']):
+            log_('wrong entropy bit')
+            return False
         if tx_check(block['txs']): 
             log_('tx check')
             return False

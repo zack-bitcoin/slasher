@@ -31,6 +31,18 @@ def fee_check(tx, txs, DB):
         log('insufficient money')
         return False
     return True
+def entropy(txs):
+    one=0
+    zero=0
+    for t in filter(lambda x: x['type']=='sign', txs):
+        if t['entropy']==0:
+            zero+=len(t['jackpots'])
+        elif t['entropy']==1:
+            one+=len(t['jackpots'])
+        else:
+            error()
+    if one>zero: return 1
+    else: return 0
 def get_(loc, thing): 
     if loc==[]: return thing
     return get_(loc[1:], thing[loc[0]])

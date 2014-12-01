@@ -97,7 +97,7 @@ def stop_(DB, args):
     return('turning off all threads')
 def commands(DB, args): return sorted(Do.keys()+['start', 'new_address'])
 def default_block(n, txs=[]):
-    return({'length':int(n), 'txs':txs, 'version':custom.version, 'block_hash':''})
+    return({'length':int(n), 'txs':txs, 'version':custom.version, 'block_hash':'', 'entropy':tools.entropy(tx)})
 def buy_block(DB, args):
     length=tools.db_get('length')
     prev_block=tools.db_get(length)

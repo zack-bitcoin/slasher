@@ -1,0 +1,3 @@
+*replace 'count' with the rule that every tx must reference a hash from a recent block.
+
+*instead of 2-round random number generator. use low-influence next miner selection algorithm. https://blog.ethereum.org/2014/07/05/stake/
