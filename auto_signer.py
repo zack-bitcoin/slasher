@@ -22,9 +22,10 @@ def create_sign_tx():
         tools.db_put('secrets', secrets)
         tx['secret_hash']=tools.det_hash(secret)
         if on_block>0:
-            tx['prev_hash']=tools.db_get(on_block-1)['block_hash']
+            tx['prev']=tools.db_get(on_block-1)['block_hash']
     else:
         tx= {'error':'no jackpots'}
+    tx['entropy']=random.randint(0,1)
     return tx
 #first off, I need to collect a proof of how much money I had at every single block. Deal with jackpots in a seperate thread.
 def mainloop():

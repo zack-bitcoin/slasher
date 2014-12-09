@@ -14,7 +14,9 @@ def main(brainwallet, pubkey_flag=False):
         pubkey=tools.privtopub(privkey)
     else:
         pubkey=brainwallet
-
+    a=tools.empty_peer()
+    b=custom.peers
+    b[tools.getPublicIp()+':'+str(custom.port)]=a
     processes= [
         {'target': db.main,
          'args': (DB['heart_queue'], custom.database_name, tools.log, custom.database_port),
@@ -32,7 +34,7 @@ def main(brainwallet, pubkey_flag=False):
          'args': (DB, DB['heart_queue']),
          'name': 'api'},
         {'target': peers_check.main,
-         'args': (custom.peers, DB),
+         'args': (b, DB),
          'name': 'peers_check'},
         {'target': networking.serve_forever,
          'args': (peer_recieve_func, custom.port, DB['heart_queue'], True),
@@ -50,7 +52,7 @@ def main(brainwallet, pubkey_flag=False):
         tools.db_put('length', -1)
         tools.db_put('memoized_votes', {})
         tools.db_put('txs', [])
-        tools.db_put('peers_ranked', [])
+        tools.db_put('peers', {})
         tools.db_put('targets', {})
         tools.db_put('times', {})
         tools.db_put('mine', False)

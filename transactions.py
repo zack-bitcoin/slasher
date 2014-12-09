@@ -78,7 +78,7 @@ def sign_verify(tx, txs, out, DB):
         tools.log('need the hash of a secret')
         return False
     if 'entropy' not in tx or tx['entropy'] not in [0, 1]:
-        tools.log('needs a bit of entropy')
+        tools.log('needs a bit of entropy:  '+str(tx))
         return False
     for t in txs:
         if tools.addr(t)==address:
@@ -97,7 +97,7 @@ def sign_verify(tx, txs, out, DB):
         tools.log('should be: ' +str(length+1))
         return False
     if tx['on_block']>0:
-        if not tx['prev_hash']==tools.db_get(length)['block_hash']:
+        if not tx['prev']==tools.db_get(length)['block_hash']:
             tools.log('must give hash of previous block')
             return False
     ran=det_random(tx['on_block'])
@@ -171,21 +171,17 @@ def spend(tx, DB, add_block):
     adjust_int(['amount'], address, -tx['amount'], DB, add_block)
     adjust_int(['amount'], tx['to'], tx['amount'], DB, add_block)
     adjust_int(['amount'], address, -custom.fee, DB, add_block)
-    adjust_int(['count'], address, 1, DB, add_block)
 def sign(tx, DB, add_block):
     address = tools.addr(tx)
     adjust_int(['amount'], address, -tx['amount'], DB, add_block)
     adjust_int(['amount'], address, -custom.deposit_fee, DB, add_block)
-    adjust_int(['count'], address, 1, DB, add_block)
     #record somewhere. maybe on the block in the future?
 def slasher(tx, DB, add_block):
     address = tools.addr(tx)
-    adjust_int(['count'], address, 1, DB, add_block)
     #destroy the deposit. give a portion of it as a reward to the person who caught the criminal.
     #record
 def reward(tx, DB, add_block):
     address = tools.addr(tx)
-    adjust_int(['count'], address, 1, DB, add_block)
     #if they successfully signed, then reward them. otherwise punish them by taking 2 times the reward from their deposit, and returning the rest to them.
     #record
     pass

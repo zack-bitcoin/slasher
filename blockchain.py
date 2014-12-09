@@ -16,8 +16,10 @@ def add_tx(tx, DB={}):
     if type(tx) != type({'a':1}): 
         return False
     address = tools.make_address(tx['pubkeys'], len(tx['signatures']))
+    '''
     def verify_count(tx, txs):
         return tx['count'] != tools.count(address, DB)
+    '''
     def type_check(tx, txs):
         if not tools.E_check(tx, 'type', [str, unicode]):
             out[0]+='blockchain type'
@@ -31,15 +33,16 @@ def add_tx(tx, DB={}):
     def too_big_block(tx, txs):
         return len(tools.package(txs+[tx])) > networking.MAX_MESSAGE_SIZE - 5000
     def verify_tx(tx, txs, out):
+        #do not allow tx which fail to reference one of the 10 most recent blocks. do not allow tx which have an identical copy in the last 10 blocks.
         if not type_check(tx, txs):
             out[0]+='type error'
             return False
         if tx in txs:
             out[0]+='no duplicates'
             return False
-        if verify_count(tx, txs):
-            out[0]+='count error'
-            return False
+        #if verify_count(tx, txs):
+        #    out[0]+='count error'
+        #    return False
         if too_big_block(tx, txs):
             out[0]+='too many txs'
             return False
@@ -88,7 +91,7 @@ def hexSum(a, b):
 def hexInvert(n):
     # Use double-size for division, to reduce information leakage.
     return tools.buffer_(str(hex(int('f' * 128, 16) / int(n, 16)))[2: -1], 64)
-def add_block(block_pair, DB={}):
+def add_block(block_pair, recent_hashes, DB={}):
     """Attempts adding a new block to the blockchain.
      Median is good for weeding out liars, so long as the liars don't have 51%
      hashpower. """
@@ -151,6 +154,9 @@ def add_block(block_pair, DB={}):
     else:
         block=block_pair
         peer=False
+    if 'block_hash' in block and block['block_hash'] in recent_hashes:
+        tools.log('we already have that block')
+        return 0
     tools.log('attempt to add block: ' +str(block))
     if block_check(block, DB):
         tools.log('add_block: ' + str(block))
@@ -162,12 +168,18 @@ def add_block(block_pair, DB={}):
             transactions.update[tx['type']](tx, DB, True)
         for tx in orphans:
             add_tx(tx, DB)
+        peers=tools.db_get('peers')
+        if peer!=False and peers[peer]['blacklist']>0:
+            peers[peer]['blacklist']-=1
+        tools.db_put('peers', peers)
         proofs=tools.db_get('balance_proofs')
         proofs.append(tools.db_proof(tools.db_get('address')))
         tools.db_put('balance_proofs', proofs)
-        #while tools.db_get('length')!=block['length']:
-        #    time.sleep(0.0001)
-
+    elif not peer==False:
+        peers=tools.db_get('peers')
+        if peer not in peers:
+            peers[peer]=tools.empty_peer()
+        peers[peer]['blacklist']+=1
 def delete_block(DB):
     """ Removes the most recent block from the blockchain. """
     length=tools.db_get('length')
@@ -200,7 +212,7 @@ def delete_block(DB):
     else:
         block = tools.db_get(length, DB)
         tools.db_put('diffLength', block['diffLength'])
-    for orphan in sorted(orphans, key=lambda x: x['count']):
+    for orphan in orphans:
         add_tx(orphan, DB)
     #while tools.db_get('length')!=length:
     #    time.sleep(0.0001)
@@ -217,12 +229,17 @@ def f(blocks_queue, txs_queue):
                 tools.log(exc)
     while True:
         time.sleep(0.1)
+        l=tools.db_get('length')+1
+        v=range(l-10, l)
+        v=filter(lambda x: x>0, v)
+        v=map(lambda x: tools.db_get(x), v)
+        v=map(lambda x: x['block_hash'], v)
         if tools.db_get('stop'):
             tools.dump_out(blocks_queue)
             tools.dump_out(txs_queue)
             return
         while not bb() or not tb():
-            ff(blocks_queue, add_block, bb, 'block')
+            ff(blocks_queue, lambda x: add_block(x, v), bb, 'block')
             ff(txs_queue, add_tx, tb, 'tx')
 import cProfile
 def main(DB): return f(DB["suggested_blocks"], DB["suggested_txs"])

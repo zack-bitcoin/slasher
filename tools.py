@@ -2,7 +2,13 @@
 """
 import pt, hashlib, re, subprocess, time, copy, networking, custom, logging, random
 from json import dumps as package, loads as unpackage
+from urllib import urlopen
+import re
 #print(json.dumps(x, indent=3, sort_keys=True))  for pretty printing
+def getPublicIp():
+    data = str(urlopen('http://checkip.dyndns.com/').read())
+    # data = '<html><head><title>Current IP Check</title></head><body>Current IP Address: 65.96.168.198</body></html>\r\n'
+    return re.compile(r'Address: (\d+\.\d+\.\d+\.\d+)').search(data).group(1)
 def int2hash(a): return buffer_(str(hex(a))[2:], 64)
 def hash2int(a): return int(str(a), 16)
 def cost_0(txs, address):
@@ -89,37 +95,27 @@ def adjust_list(location, pubkey, remove, item, DB, add_block):
 def symmetric_put(id_, dic, DB, add_block):
     if add_block: db_put(id_, dic, DB)
     else: db_delete(id_, DB)
-
+def empty_peer(): return {'blacklist':0, 'lag':40.0, 'length':0, 'diffLength':"0"}
+def peer_split(peer):
+    a=peer.split(':')
+    a[1]=int(a[1])
+    return a
+def port_grab(peer): return peer_split(peer)[1]
 def add_peer(peer, current_peers=0):
     if current_peers==0:
-        current_peers=db_get('peers_ranked')
-    if peer[0][0] not in map(lambda x: x[0][0], current_peers):
-        log('add peer: '+str(peer))
-        current_peers.append([peer, 5, '0', 0])
-        db_put('peers_ranked',current_peers)
+        current_peers=db_get('peers')
+    if peer in current_peers.keys():
+        return False
+    a=empty_peer()
+    a['port']=port_grab(peer)
+    current_peers[peer]=a
+    db_put('peers', current_peers)
 def dump_out(queue):
     while not queue.empty():
         try:
             queue.get(False)
         except:
             pass
-def heart_monitor(queue):
-    beats={}
-    while True:
-        time.sleep(0.5)
-        t=time.time()
-        for beat in beats:
-            if t-beats[beat]>30:
-                beats[beat]=t
-                log('thread has an error: ' +str(beat))
-        while not(queue.empty()):
-            time.sleep(0.01)
-            beat=queue.get(False)
-            #log('heart monitor: ' +str(beat))
-            if beat=='stop': return
-            if beat not in beats:
-                log('adding thread: ' +str(beat))
-            beats[beat]=t
 logging.basicConfig(filename=custom.log_file, level=logging.INFO)
 def log(junk):
     if isinstance(junk, Exception):
@@ -143,10 +139,8 @@ def det_hash(x):
     #log('in det hash: ' +str(package(x, sort_keys=True)))
     return hash_(package(x, sort_keys=True))
 def POW(block):
-    #halfHash = det_hash(block)
     h=det_hash(block)
     block[u'nonce'] = random.randint(0, 10000000000000000000000000000000000000000)
-    a='F'*64
     while det_hash(a) > custom.buy_shares_target:
         block[u'nonce'] += 1
         a={u'nonce': block['nonce'], u'halfHash': h}
@@ -218,6 +212,7 @@ def db_existence(key, DB={}): return s_to_db({'type':'existence', 'args':[str(ke
 def db_proof(key): return s_to_db({'type':'proof', 'args':[str(key)]})
 def db_verify(root, key, proof): return s_to_db({'type':'verify', 'args':[root, key, proof]})
 def db_root(): return s_to_db({'type':'root', 'args':[]})
+'''
 def count(address, DB):
     # Returns the number of transactions that pubkey has broadcast.
     def zeroth_confirmation_txs(address, DB):
@@ -228,9 +223,10 @@ def count(address, DB):
     current = db_get(address, DB)['count']
     zeroth=zeroth_confirmation_txs(address, DB)
     return current+zeroth
+'''
 def fork_check(newblocks, DB, length, block):
     recent_hash = det_hash(block)
-    their_hashes = map(lambda x: x['prevHash'] if x['length']>0 else 0, newblocks)+[det_hash(newblocks[-1])]
+    their_hashes = map(lambda x: x['prev'] if x['length']>0 else 0, newblocks)+[det_hash(newblocks[-1])]
     b=(recent_hash not in their_hashes) and length>newblocks[0]['length']-1 and length<newblocks[-1]['length']
     return b
 if __name__ == "__main__":

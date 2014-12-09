@@ -16,6 +16,9 @@ def easy_add_transaction(tx_orig, DB={}, privkey='default'):
             return('no private key is known, so the tx cannot be signed. Here is the tx: \n'+str(tools.package(tx_orig).encode('base64').replace('\n', '')))
     pubkey=tools.privtopub(privkey)
     address=tools.make_address([pubkey], 1)
+    length=tools.db_get('length')
+    if 'recentHash' not in tx and length>3:
+        tx['recentHash']=tools.db_get(length-2)['prev']
     if 'count' not in tx:
         try:
             tx['count'] = tools.count(address, {})
@@ -55,7 +58,7 @@ def help_(DB, args):
     except:
         return(str(args[0])+' is not a word in the help documentation.')
 def peers(DB, args):
-    return(tools.db_get('peers_ranked'))
+    return(tools.db_get('peers'))
 def DB_print(DB, args):
     return(DB)
 def info(DB, args): 
@@ -97,7 +100,7 @@ def stop_(DB, args):
     return('turning off all threads')
 def commands(DB, args): return sorted(Do.keys()+['start', 'new_address'])
 def default_block(n, txs=[]):
-    return({'length':int(n), 'txs':txs, 'version':custom.version, 'block_hash':'', 'entropy':tools.entropy(tx)})
+    return({'length':int(n), 'txs':txs, 'version':custom.version, 'block_hash':'', 'entropy':tools.entropy(txs)})
 def buy_block(DB, args):
     length=tools.db_get('length')
     prev_block=tools.db_get(length)

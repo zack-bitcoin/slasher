@@ -1,3 +1,5 @@
+Explain all the attack scenarios that you imagined while writing the code, post it on #bitcoin-wizards
+
 *replace 'count' with the rule that every tx must reference a hash from a recent block, and every tx must be non-identical to every other tx in recent blocks.
 
 *instead of 2-round random number generator. use low-influence next miner selection algorithm. https://blog.ethereum.org/2014/07/05/stake/
