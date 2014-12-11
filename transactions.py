@@ -90,11 +90,11 @@ def sign_verify(tx, txs, out, DB):
     if not signature_check(tx):
         out[0]+='signature check'
         return False
-    length=tools.db_get('length')
+    length=tools.local_get('length')
     if tx['on_block']!=length+1:
-        tools.log('this tx is for the wrong block')
-        tools.log('tx: ' +str(tx))
-        tools.log('should be: ' +str(length+1))
+        out[0]+='this tx is for the wrong block'
+        out[0]+='tx: ' +str(tx)
+        out[0]+='should be: ' +str(length+1)
         return False
     if tx['on_block']>0:
         if not tx['prev']==tools.db_get(length)['block_hash']:

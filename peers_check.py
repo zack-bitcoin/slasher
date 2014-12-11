@@ -11,7 +11,7 @@ def download_blocks(peer, DB, peers_block_count, length):
     blocks = cmd(peer, {'type': 'rangeRequest', 'range': b})
     if type(blocks)!=list: return -1
     if not isinstance(blocks, list): return []
-    length=tools.db_get('length')
+    length=tools.local_get('length')
     block=tools.db_get(length)
     for i in range(10):#this part should be re-written so badly
         if tools.fork_check(blocks, DB, length, block):
@@ -26,21 +26,21 @@ def ask_for_txs(peer, DB):
         return -1
     for tx in txs:
         DB['suggested_txs'].put(tx)
-    T=tools.db_get('txs')
+    T=tools.local_get('txs')
     pushers = filter(lambda t: t not in txs, T)
     for push in pushers:
         cmd(peer, {'type': 'pushtx', 'tx': push})
     return 0
 def give_block(peer, DB, block_count_peer):
     blocks=[]
-    b=[max(block_count_peer-5, 0), min(tools.db_get('length'), block_count_peer+custom.download_many)]
+    b=[max(block_count_peer-5, 0), min(tools.local_get('length'), block_count_peer+custom.download_many)]
     for i in range(b[0], b[1]+1):
         blocks.append(tools.db_get(i, DB))
     cmd(peer, {'type': 'pushblock',
                'blocks': blocks})
     return 0
 def ask_for_count(peer):
-    peers=tools.db_get('peers')
+    peers=tools.local_get('peers')
     block_count = cmd(peer, {'type': 'blockCount'})
     if not isinstance(block_count, dict):
         return
@@ -50,7 +50,7 @@ def ask_for_count(peer):
     peers[peer]['length']=block_count['length']
     tools.db_put('peers', peers)
 def trade_peers(peer):
-    peers=tools.db_get('peers')
+    peers=tools.local_get('peers')
     peer_length=peers[peer]['length']
     peer_diffLength=peers[peer]['diffLength']
     their_peers=cmd(peer, {'type':'peers'})
@@ -65,14 +65,14 @@ def trade_peers(peer):
         tools.add_peer(p)
     cmd(peer, {'type':'recieve_peer', 'peers':to_them})
 def peer_check(peer, DB):
-    peers=tools.db_get('peers')
+    peers=tools.local_get('peers')
     if peers[peer]['length']==0 or random.random()<0.1:
         ask_for_count(peer)
         out=trade_peers(peer)
         if type(out)==dict and 'error' in out: return 1
-    peers=tools.db_get('peers')
-    length = tools.db_get('length')
-    diffLength= tools.db_get('diffLength')
+    peers=tools.local_get('peers')
+    length = tools.local_get('length')
+    diffLength= tools.local_get('diffLength')
     size = max(len(diffLength), len(peers[peer]['diffLength']))
     us = tools.buffer_(diffLength, size)
     them = tools.buffer_(peers[peer]['diffLength'], size)
@@ -96,12 +96,12 @@ def main(peers, DB):
     try:
         while True:
             time.sleep(0.01)
-            if tools.db_get('stop'): return
+            if tools.local_get('stop'): return
             main_once(DB)
     except Exception as exc:
         tools.log(exc)
 def main_once(DB):
-    pr=tools.db_get('peers')
+    pr=tools.local_get('peers')
     keys=filter(lambda x: pr[x]['blacklist']<500, pr.keys())
     keys=sorted(keys, key=lambda r: pr[r]['lag'])
     if len(keys)<1:
@@ -110,13 +110,13 @@ def main_once(DB):
     time.sleep(0.05)
     while not DB['suggested_blocks'].empty():
         time.sleep(0.1)
-        if tools.db_get('stop'): return 0
+        if tools.local_get('stop'): return 0
     i=exponential_random(9.0/10)%len(keys)
     t1=time.time()
     r=peer_check(keys[i], DB)
     t2=time.time()
     a=0.5
-    pr=tools.db_get('peers')
+    pr=tools.local_get('peers')
     pr[keys[i]]['lag']*=(1-a)
     if r==0: a*=(t2-t1)
     else:

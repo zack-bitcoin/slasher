@@ -13,9 +13,9 @@ def recieve_peer(dic, DB):
     else:
         tools.add_peer(dic['peer'])
 def blockCount(dic, DB):
-    length = tools.db_get('length')
+    length = tools.local_get('length')
     d='0'
-    if length >= 0: d=tools.db_get('diffLength')
+    if length >= 0: d=tools.local_get('diffLength')
     return {'length': length, 'diffLength': d}
 def rangeRequest(dic, DB):
     ran = dic['range']
@@ -29,12 +29,12 @@ def rangeRequest(dic, DB):
         counter += 1
     return out
 def txs(dic, DB):
-    return tools.db_get('txs')
+    return tools.local_get('txs')
 def pushtx(dic, DB):
     DB['suggested_txs'].put(dic['tx'])
     return 'success'
 def pushblock(dic, DB):
-    length=tools.db_get('length')
+    length=tools.local_get('length')
     block = tools.db_get(length, DB)    
     if 'peer' in dic: peer=dic['peer']
     else: peer=False
@@ -48,7 +48,7 @@ def pushblock(dic, DB):
     else:
         DB['suggested_blocks'].put([dic['block'], peer])
     return 'success'
-def peers(dic, DB): return tools.db_get('peers')
+def peers(dic, DB): return tools.local_get('peers')
 def main(dic, DB):
     #tools.log(dic)
     funcs = {'recieve_peer':recieve_peer, 'blockCount': blockCount, 'rangeRequest': rangeRequest,'txs': txs, 'pushtx': pushtx, 'pushblock': pushblock, 'peers':peers}

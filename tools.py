@@ -103,13 +103,13 @@ def peer_split(peer):
 def port_grab(peer): return peer_split(peer)[1]
 def add_peer(peer, current_peers=0):
     if current_peers==0:
-        current_peers=db_get('peers')
+        current_peers=local_get('peers')
     if peer in current_peers.keys():
         return False
     a=empty_peer()
     a['port']=port_grab(peer)
     current_peers[peer]=a
-    db_put('peers', current_peers)
+    local_put('peers', current_peers)
 def dump_out(queue):
     while not queue.empty():
         try:
@@ -205,25 +205,15 @@ def s_to_db(c):
         #return s_to_db(c)
     else:
         return response
+def local_get(k): return s_to_db({'type':'local_get', 'args':[str(k)]})
+def local_put(k, v): return s_to_db({'type':'local_put', 'args':[str(k), v]})
 def db_get(n, DB={}): return s_to_db({'type':'get', 'args':[str(n)]})
 def db_put(key, dic, DB={}): return s_to_db({'type':'put', 'args':[str(key), dic]})
-def db_delete(key, DB={}): return s_to_db({'type':'delete', 'args':[str(key)]})#db_put(key, 'undefined', DB)
+def db_delete(key, DB={}): return s_to_db({'type':'delete', 'args':[str(key)]})
 def db_existence(key, DB={}): return s_to_db({'type':'existence', 'args':[str(key)]})
 def db_proof(key): return s_to_db({'type':'proof', 'args':[str(key)]})
 def db_verify(root, key, proof): return s_to_db({'type':'verify', 'args':[root, key, proof]})
 def db_root(): return s_to_db({'type':'root', 'args':[]})
-'''
-def count(address, DB):
-    # Returns the number of transactions that pubkey has broadcast.
-    def zeroth_confirmation_txs(address, DB):
-        def is_zero_conf(t):
-            other_address=make_address(t['pubkeys'], len(t['signatures']))
-            return address == other_address
-        return len(filter(is_zero_conf, db_get('txs')))
-    current = db_get(address, DB)['count']
-    zeroth=zeroth_confirmation_txs(address, DB)
-    return current+zeroth
-'''
 def fork_check(newblocks, DB, length, block):
     recent_hash = det_hash(block)
     their_hashes = map(lambda x: x['prev'] if x['length']>0 else 0, newblocks)+[det_hash(newblocks[-1])]

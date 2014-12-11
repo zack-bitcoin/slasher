@@ -1,9 +1,9 @@
 import transactions, tools, custom, time, sys, api, random
 def create_sign_tx():
-    on_block=tools.db_get('length')+1
+    on_block=tools.local_get('length')+1
     r=transactions.det_random(on_block)
     jackpots=[]
-    address=tools.db_get('address')
+    address=tools.local_get('address')
     B=tools.db_get(address)['amount']
     M=custom.all_money
     for j in range(custom.jackpot_nonces):
@@ -12,14 +12,13 @@ def create_sign_tx():
     if len(jackpots)>0:
         #proot=get_proof(on_block)
         proof=tools.db_proof(address)
-        a=tools.db_get('balance_proofs')
-        tools.log('balance: ' +str(a))
+        a=tools.local_get('balance_proofs')
         proof=a[max(on_block-custom.long_time, 0)]
         tx={'on_block':on_block, 'proof':proof, 'jackpots':jackpots, 'type':'sign', 'amount':M/3000/3}
         secret=str(random.random())+str(random.random())
-        secrets=tools.db_get('secrets')
+        secrets=tools.local_get('secrets')
         secrets[str(on_block)]=secret
-        tools.db_put('secrets', secrets)
+        tools.local_put('secrets', secrets)
         tx['secret_hash']=tools.det_hash(secret)
         if on_block>0:
             tx['prev']=tools.db_get(on_block-1)['block_hash']
@@ -31,8 +30,8 @@ def create_sign_tx():
 def mainloop():
     while True:
         time.sleep(2)
-        txs=tools.db_get('txs')
-        address=tools.db_get('address')
+        txs=tools.local_get('txs')
+        address=tools.local_get('address')
         txs=filter(lambda x: address==tools.addr(x), txs)
         txs=filter(lambda x: x['type']=='sign', txs)
         if len(txs)==0:

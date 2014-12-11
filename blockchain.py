@@ -51,22 +51,22 @@ def add_tx(tx, DB={}):
             return False
         return True
     #tools.log('attempt to add tx: ' +str(tx))
-    T=tools.db_get('txs')
+    T=tools.local_get('txs')
     if verify_tx(tx, T, out):
         T.append(tx)
-        tools.db_put('txs', T)
+        tools.local_put('txs', T)
         return('added tx: ' +str(tx))
     else:
         return('failed to add tx because: '+out[0])
 def recent_blockthings(key, size, length=0):
-    storage = tools.db_get(key)
+    storage = tools.local_get(key)
     def get_val(length):
         leng = str(length)
         if not leng in storage:            
             block=tools.db_get(leng)
             if block==db.default_entry():
-                if leng==tools.db_get('length'):
-                    tools.db_put('length', int(leng)-1)
+                if leng==tools.local_get('length'):
+                    tools.local_put('length', int(leng)-1)
                     block=tools.db_get(leng)
                 else:
                     error()
@@ -81,7 +81,7 @@ def recent_blockthings(key, size, length=0):
             storage.pop(str(end))
             return clean_up(storage, end-1)
     if length == 0:
-        length = tools.db_get('length')
+        length = tools.local_get('length')
     start = max((length-size), 0)
     clean_up(storage, length-max(custom.mmm, custom.history_length)-100)
     return map(get_val, range(start, length))
@@ -122,7 +122,7 @@ def add_block(block_pair, recent_hashes, DB={}):
         if not tools.E_check(block, 'length', [int]):
             log_('no length')
             return False
-        length =tools.db_get('length')
+        length =tools.local_get('length')
         if type(block['length'])!=type(1): 
             log_('wrong length type')
             return False
@@ -161,57 +161,57 @@ def add_block(block_pair, recent_hashes, DB={}):
     if block_check(block, DB):
         tools.log('add_block: ' + str(block))
         tools.db_put(block['length'], block, DB)
-        tools.db_put('length', block['length'])
-        orphans = tools.db_get('txs')
-        tools.db_put('txs', [])
+        tools.local_put('length', block['length'])
+        orphans = tools.local_get('txs')
+        tools.local_put('txs', [])
         for tx in block['txs']:
             transactions.update[tx['type']](tx, DB, True)
         for tx in orphans:
             add_tx(tx, DB)
-        peers=tools.db_get('peers')
+        peers=tools.local_get('peers')
         if peer!=False and peers[peer]['blacklist']>0:
             peers[peer]['blacklist']-=1
-        tools.db_put('peers', peers)
-        proofs=tools.db_get('balance_proofs')
-        proofs.append(tools.db_proof(tools.db_get('address')))
-        tools.db_put('balance_proofs', proofs)
+        tools.local_put('peers', peers)
+        proofs=tools.local_get('balance_proofs')
+        proofs.append(tools.db_proof(tools.local_get('address')))
+        tools.local_put('balance_proofs', proofs)
     elif not peer==False:
-        peers=tools.db_get('peers')
+        peers=tools.local_get('peers')
         if peer not in peers:
             peers[peer]=tools.empty_peer()
         peers[peer]['blacklist']+=1
 def delete_block(DB):
     """ Removes the most recent block from the blockchain. """
-    length=tools.db_get('length')
+    length=tools.local_get('length')
     if length < 0:
         return
     try:
-        ts=tools.db_get('targets')
+        ts=tools.local_get('targets')
         ts.pop(str(length))
-        tools.db_put('targets', ts)
+        tools.local_put('targets', ts)
     except:
         pass
     try:
-        ts=tools.db_get('times')
+        ts=tools.local_get('times')
         ts.pop(str(length))
-        tools.db_put('times', ts)
+        tools.local_put('times', ts)
     except:
         pass
     block = tools.db_get(length, DB)
-    orphans = tools.db_get('txs')
-    tools.db_put('txs', [])
+    orphans = tools.local_get('txs')
+    tools.local_put('txs', [])
     for tx in block['txs']:
         orphans.append(tx)
-        tools.db_put('add_block', False)
+        tools.local_put('add_block', False)
         transactions.update[tx['type']](tx, DB, False)
     tools.db_delete(length, DB)
     length-=1
-    tools.db_put('length', length)
+    tools.local_put('length', length)
     if length == -1:
-        tools.db_put('diffLength', '0')
+        tools.local_put('diffLength', '0')
     else:
         block = tools.db_get(length, DB)
-        tools.db_put('diffLength', block['diffLength'])
+        tools.local_put('diffLength', block['diffLength'])
     for orphan in orphans:
         add_tx(orphan, DB)
     #while tools.db_get('length')!=length:
@@ -229,12 +229,12 @@ def f(blocks_queue, txs_queue):
                 tools.log(exc)
     while True:
         time.sleep(0.1)
-        l=tools.db_get('length')+1
+        l=tools.local_get('length')+1
         v=range(l-10, l)
         v=filter(lambda x: x>0, v)
         v=map(lambda x: tools.db_get(x), v)
         v=map(lambda x: x['block_hash'], v)
-        if tools.db_get('stop'):
+        if tools.local_get('stop'):
             tools.dump_out(blocks_queue)
             tools.dump_out(txs_queue)
             return
