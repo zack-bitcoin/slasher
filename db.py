@@ -8,7 +8,14 @@ def main(heart_queue, database_name, logf, database_port):
     import networking
     import sys
     import patricia as patty
-    def local_get(args): return json.loads(DB.Get(args[0]))
+    def local_get(args): 
+        try:
+            a=json.loads(DB.Get(args[0]))
+            return a
+        except Exception as exc:
+            logf(exc)
+            logf('local get: '+str(args))
+            return 'empty'
     def local_put(args): return DB.Put(args[0], json.dumps(args[1]))
     def get(args):
         try:

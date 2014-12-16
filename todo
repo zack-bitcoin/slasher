@@ -1,3 +1,19 @@
+combine the good parts from LIF and old random number generator.
+
+Maybe the blockmaker should be rewarded for each signer he includes. This would disincentivize him from trying to cheat by including less signers.
+so say minsigners = 10, maxsigners = 15
+
+say there are 10 signers
+reward is 0
+
+11 signers
+reward is 20%
+
+12 signers
+reward is 40%
+
+
+
 write the transaction types for slasher.
 
 Explain all the attack scenarios that you imagined while writing the code, post it on #bitcoin-wizards

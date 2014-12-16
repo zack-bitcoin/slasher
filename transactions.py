@@ -116,11 +116,11 @@ def sign_verify(tx, txs, out, DB):
         return False
     return True
 def det_random(length):#this is very slow. we should memoize entropy somewhere.
+    #returns random seed to elect signers.
     def mean(l): return sorted(l)[len(l)/2]
     ran=[]
-    m=custom.long_time-custom.medium_time
     for i in range(custom.medium_time/2):
-        a=length-m-i
+        a=length-custom.long_time-i
         if a<0:
             ran.append(a)
         else:
@@ -170,17 +170,18 @@ def spend(tx, DB, add_block):
     address = tools.addr(tx)
     adjust_int(['amount'], address, -tx['amount'], DB, add_block)
     adjust_int(['amount'], tx['to'], tx['amount'], DB, add_block)
-    adjust_int(['amount'], address, -custom.fee, DB, add_block)
-def sign(tx, DB, add_block):
+    #adjust_int(['amount'], address, -custom.fee, DB, add_block)
+    adjust_int(['amount'], address, -tx['fee'], DB, add_block)
+def sign(tx, DB, add_block):#should include hash(entroy_bit and salt)
     address = tools.addr(tx)
     adjust_int(['amount'], address, -tx['amount'], DB, add_block)
-    adjust_int(['amount'], address, -custom.deposit_fee, DB, add_block)
-    #record somewhere. maybe on the block in the future?
 def slasher(tx, DB, add_block):
     address = tools.addr(tx)
-    #destroy the deposit. give a portion of it as a reward to the person who caught the criminal.
+    adjust_int(['amount'], address, tx['amount']/5, DB, add_block)
+    adjust_int(['amount'], tools.addr(tx['tx1']), -tx['amount'], DB, add_block)
+    #tx={'amount':10000, 'tx1': , 'tx2': , 'reward_address': }
     #record
-def reward(tx, DB, add_block):
+def reward(tx, DB, add_block):#should also reveal entropy_bit and salt
     address = tools.addr(tx)
     #if they successfully signed, then reward them. otherwise punish them by taking 2 times the reward from their deposit, and returning the rest to them.
     #record

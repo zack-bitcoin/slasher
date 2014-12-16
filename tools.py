@@ -14,21 +14,16 @@ def hash2int(a): return int(str(a), 16)
 def cost_0(txs, address):
     #cost of the zeroth confirmation transactions
     total_cost = []
-    votecoin_cost = {}
-    #address=tools.db_get('address')
-    for Tx in filter(lambda t: address == addr(t), txs):
-        def spend_(total_cost=total_cost):
-            total_cost.append(custom.fee)
-            total_cost += [Tx['amount']]
-        def buy_shares_(total_cost=total_cost):
-            cost = cost_to_buy_shares(Tx)
-            total_cost.append(custom.buy_shares_fee)
-            total_cost.append(cost)
-            total_cost.append(int(abs(cost*0.01)))
-        Do={'spend':spend_,
-            'mint':(lambda: total_cost.append(-custom.block_reward))}
-        Do[Tx['type']]()
+    txs=filter(lambda t: address == addr(t), txs)
+    txs=filter(lambda t: t['type']=='spend', txs)
+    for t in txs:
+        total_cost.append(t['fee'])
+        total_cost.appnd(t['amount'])
     return sum(total_cost)
+def block_fee(length): return 10**9#total blocks is all_money divided by this. 21000000 blocks in this case
+#assume it takes 0.5 seconds to process each block. If someone with 1% money does DDOS, total_blocks/200 seconds is how long they can. I am aiming for 1% of money to be able to DDOS for 1 day.
+#since each block can be 10 kb, total block length is total_blocks*10kB. I am aiming for 210 GB.
+#once we apply mini-blockchain proposal, then this number will shrink slowly. The total coins will decrease by a half-life ever 21 million blocks.
 def fee_check(tx, txs, DB):
     address = addr(tx)
     cost=cost_0(txs+[tx], address)
@@ -202,6 +197,7 @@ def s_to_db(c):
     if (type(response)==dict and 'error' in response):
         time.sleep(0.001)
         log('s to db failed at '+str(c))
+        log('s to db failed at '+str(response))
         #return s_to_db(c)
     else:
         return response

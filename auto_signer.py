@@ -11,10 +11,15 @@ def create_sign_tx():
             jackpots.append(j)
     if len(jackpots)>0:
         #proot=get_proof(on_block)
-        proof=tools.db_proof(address)
-        a=tools.local_get('balance_proofs')
-        proof=a[max(on_block-custom.long_time, 0)]
-        tx={'on_block':on_block, 'proof':proof, 'jackpots':jackpots, 'type':'sign', 'amount':M/3000/3}
+        #proof=tools.db_proof(address)
+        tx={'on_block':on_block, 'jackpots':jackpots, 'type':'sign', 'amount':M/3000/3}
+        if on_block>0:
+            b=max(on_block-custom.long_time, -1)
+            proof=tools.local_get('balance_proofs'+str(b))
+            if proof=='empty':
+                time.sleep(1)
+                return {'error':'not ready'}
+            tx['proof']=proof
         secret=str(random.random())+str(random.random())
         secrets=tools.local_get('secrets')
         secrets[str(on_block)]=secret

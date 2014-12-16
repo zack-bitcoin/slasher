@@ -1,6 +1,7 @@
 """This is to make magic numbers easier to deal with."""
 import multiprocessing, os
 peers={'192.241.212.114:7900':{'port':7900, 'blacklist':0, 'diffLength':"0", 'length':0, 'lag':40.0}}
+max_block_size=10#kilobytes
 current_loc=os.path.dirname(os.path.abspath(__file__))
 database_name = os.path.join(current_loc, 'DB')
 log_file=os.path.join(current_loc, 'log')
@@ -12,8 +13,8 @@ all_money=21*10**15
 creator='115nxUddLmxijWskiz5znHxk1KdMZpS'
 max_key_length=6**4
 block_reward = 10 ** 5
-fee = 10 ** 3
 signers=64
+default_spend_fee=1000
 # Lower limits on what the "time" tag in a block can say.
 #get rid of decimal.
 #for vitalik's slasher, 3000, 1000, 100
@@ -22,7 +23,6 @@ medium_time=6
 short_time=2
 maximum_deposit=all_money/signers/long_time/2
 minimum_deposit=maximum_deposit/100
-deposit_fee = 10 ** 3
 jackpot_nonces=200
 mmm = 100
 download_many = 50  # Max number of blocks to request from a peer at the same time.

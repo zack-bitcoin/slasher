@@ -35,7 +35,7 @@ https://blog.ethereum.org/2014/11/25/proof-stake-learned-love-weak-subjectivity/
 1) weak subjectivity (not yet implemented)
 
 https://blog.ethereum.org/2014/07/05/stake/
-1) the low influence random number generator
+1) the low influence random number generator, with a modification. Signers first reveal Hash(bit+salt) and later reveal bit+salt when they collect their reward.
 
 I use something similar to Daniel Larimer's transactions as proof of stake. Every transaction must reference the hash of one of the 10 most recent blocks. That way forks that start more than 10 blocks ago wont have any tx fees to reward the block creator.
 

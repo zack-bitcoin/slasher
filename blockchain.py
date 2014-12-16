@@ -129,6 +129,17 @@ def add_block(block_pair, recent_hashes, DB={}):
         if int(block['length']) != int(length) + 1:
             log_('wrong longth')
             return False
+        block_creator_address=tools.addr(block)
+        for tx in block['txs']:
+            a=tools.addr(tx)
+            if a==block_creator_address:
+                if tx['type']=='spend':
+                    log_('the block creator cannot have tx fees in his own block:'+str(tx))
+                    return False
+        block_creator=tools.db_get(block_creator_address)
+        if block_creator['amount']<tools.block_fee(block['length'])+tools.cost_0(block['txs'], block_creator_address):
+            log_('you cannot afford to create a block')
+            return False
         txs=filter(lambda x: x['type']=='sign', block['txs'])
         txs=map(lambda x: len(x['jackpots']), txs)
         if sum(txs)<custom.signers*2/3:
@@ -162,6 +173,7 @@ def add_block(block_pair, recent_hashes, DB={}):
         tools.log('add_block: ' + str(block))
         tools.db_put(block['length'], block, DB)
         tools.local_put('length', block['length'])
+        #take money from the creator
         orphans = tools.local_get('txs')
         tools.local_put('txs', [])
         for tx in block['txs']:
@@ -172,9 +184,8 @@ def add_block(block_pair, recent_hashes, DB={}):
         if peer!=False and peers[peer]['blacklist']>0:
             peers[peer]['blacklist']-=1
         tools.local_put('peers', peers)
-        proofs=tools.local_get('balance_proofs')
-        proofs.append(tools.db_proof(tools.local_get('address')))
-        tools.local_put('balance_proofs', proofs)
+        tools.log('balance_proofs'+str(block['length'])+';'+tools.db_proof(tools.local_get('address')))
+        tools.local_put('balance_proofs'+str(block['length']),tools.db_proof(tools.local_get('address')))
     elif not peer==False:
         peers=tools.local_get('peers')
         if peer not in peers:
@@ -204,6 +215,11 @@ def delete_block(DB):
         orphans.append(tx)
         tools.local_put('add_block', False)
         transactions.update[tx['type']](tx, DB, False)
+    block_creator_address=tools.addr(tools.db_get(length))
+    block_creator=tools.db_get(block_creator_address)
+    block_creator['amount']+=tools.block_fee(length)
+    tools.db_put(block_creator_address, block_creator)
+    #return money to the creator
     tools.db_delete(length, DB)
     length-=1
     tools.local_put('length', length)

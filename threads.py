@@ -47,7 +47,7 @@ def main(brainwallet, pubkey_flag=False):
     tools.log('starting '+cmd.name)
     time.sleep(4)
     b=tools.db_existence(0)
-    def empty_memoized(): return({'blockcount':-3000})
+    #def empty_memoized(): return({'blockcount':-3000})
     if not b:
         tools.local_put('length', -1)
         tools.local_put('memoized_votes', {})
@@ -56,8 +56,7 @@ def main(brainwallet, pubkey_flag=False):
         tools.local_put('targets', {})
         tools.local_put('times', {})
         tools.local_put('mine', False)
-        tools.local_put('balance_proofs', empty_memoized())
-        tools.local_put('my_sign_txs', empty_memoized())
+        tools.local_put('my_sign_txs', {})#empty_memoized())
         tools.local_put('secrets', {})
         money=db.default_entry()
         money['amount']+=custom.all_money
@@ -76,7 +75,7 @@ def main(brainwallet, pubkey_flag=False):
     Address=tools.make_address([pubkey], 1)
     tools.local_put('address', Address)
     a=tools.db_proof(Address)
-    tools.local_put('balance_proofs', [a])
+    tools.local_put('balance_proofs-1', a)
     tools.log('stop: ' +str(tools.local_get('stop')))
     while not tools.local_get('stop'):
         time.sleep(0.5)

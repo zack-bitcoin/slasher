@@ -4,7 +4,7 @@ state=trie.Trie('db', trie.BLANK_ROOT)
 def get(key): return unpackage(rlp.decode(state.get(key)))
 def put(key, val): return state.update(key, rlp.encode(package(val)))
 def delete(key):  return state.delete(key)
-def root(key):  return state.root_hash.encode('hex')
+def root():  return state.root_hash.encode('hex')
 def prove(key): 
     p=state.produce_spv_proof(key)
     p=rlp.encode(p).encode('base64')
