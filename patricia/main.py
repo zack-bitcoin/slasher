@@ -10,12 +10,13 @@ def prove(key):
     p=rlp.encode(p).encode('base64')
     #p=package(p)
     return p
-def verify(root, key, proof): return trie.verify_spv_proof(root.decode('hex'), key, rpl.decode(proof.decode('base64')))
+def verify(root, key, proof): 
+    return trie.verify_spv_proof(root.decode('hex'), key, rlp.decode(proof.decode('base64')))
 
 def test():
     put('a', 123)
     print(get('a'))
     a=prove('a')
     print('proof a: ' +str(a))
-    print('verify: ' +str(verify(root('a'), 'a', a)))
+    print('verify: ' +str(verify(root(), 'a', a)))
 

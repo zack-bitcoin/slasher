@@ -117,11 +117,7 @@ def add_block(block_pair, recent_hashes, DB={}):
                     return True  # Block is invalid
             tools.log('block invalid because it has no txs')
             return True  # Block is invalid
-        if not isinstance(block, dict): return False
         if 'error' in block: return False
-        if not tools.E_check(block, 'length', [int]):
-            log_('no length')
-            return False
         length =tools.local_get('length')
         if type(block['length'])!=type(1): 
             log_('wrong length type')
@@ -130,6 +126,9 @@ def add_block(block_pair, recent_hashes, DB={}):
             log_('wrong longth')
             return False
         block_creator_address=tools.addr(block)
+        if block['root_hash']!=tools.db_root():
+            log_('bad root')
+            return False
         for tx in block['txs']:
             a=tools.addr(tx)
             if a==block_creator_address:
@@ -142,7 +141,7 @@ def add_block(block_pair, recent_hashes, DB={}):
             return False
         txs=filter(lambda x: x['type']=='sign', block['txs'])
         txs=map(lambda x: len(x['jackpots']), txs)
-        if sum(txs)<custom.signers*2/3:
+        if sum(txs)<custom.signers*2/3 and length>-1:
             log_('not enough signatures')
             return False
         if length >= 0:
@@ -152,9 +151,6 @@ def add_block(block_pair, recent_hashes, DB={}):
                 log_('det hash error')
                 return False
         #total money spent must be less than the total amount of money in signed deposits for this block.
-        if not block['entropy']==tools.entropy(block['txs']):
-            log_('wrong entropy bit')
-            return False
         if tx_check(block['txs']): 
             log_('tx check')
             return False
@@ -183,8 +179,9 @@ def add_block(block_pair, recent_hashes, DB={}):
         peers=tools.local_get('peers')
         if peer!=False and peers[peer]['blacklist']>0:
             peers[peer]['blacklist']-=1
-        tools.local_put('peers', peers)
-        tools.log('balance_proofs'+str(block['length'])+';'+tools.db_proof(tools.local_get('address')))
+        tools.local_put('peers', peers)#root hash written on the block is for the state before that block
+        tools.log('create balance_proofs'+str(block['length'])+';'+tools.db_proof(tools.local_get('address')))
+        tools.log('root hash: ' +str(tools.db_root()))#this is what I am actually working on.
         tools.local_put('balance_proofs'+str(block['length']),tools.db_proof(tools.local_get('address')))
     elif not peer==False:
         peers=tools.local_get('peers')

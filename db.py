@@ -2,12 +2,12 @@ from multiprocessing import Process
 import os
 import json
 import leveldb
-DB=leveldb.LevelDB('db_local')
 def default_entry(): return dict(count=0, amount=0)
 def main(heart_queue, database_name, logf, database_port):
     import networking
     import sys
     import patricia as patty
+    DB=leveldb.LevelDB(database_name+'_local')
     def local_get(args): 
         try:
             a=json.loads(DB.Get(args[0]))
@@ -37,7 +37,10 @@ def main(heart_queue, database_name, logf, database_port):
             pass
     def proof(args): return patty.prove(args[0])
     def verify(args):#root, key, proof
-        return patty.verify(args[0], args[1], args[2])
+        try:
+            return json.loads(json.loads(patty.verify(args[0], args[1], args[2])))
+        except:
+            return False
     def root(args): return patty.root()
     do={'get':get, 'put':put, 'existence':existence, 'delete':delete, 'proof':proof, 'verify':verify, 'root':root, 'local_get':local_get, 'local_put':local_put}
     def command_handler(command):

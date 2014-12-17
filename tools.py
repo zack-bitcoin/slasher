@@ -35,6 +35,7 @@ def fee_check(tx, txs, DB):
 def entropy(txs):
     one=0
     zero=0
+    log('txs: ' +str(txs))
     for t in filter(lambda x: x['type']=='sign', txs):
         if t['entropy']==0:
             zero+=len(t['jackpots'])
@@ -226,4 +227,50 @@ if __name__ == "__main__":
         print(time.time()-timea)
     print(time.time()-time_0)
     '''
+def relative_reward(on_block):
+    one_before=on_block-1
+    txs=db_get(on_block)['txs']
+    sign_txs=filter(lambda t: t['type']=='sign', txs)
+    spend_txs=map(lambda t: t['type']=='spend', db_get(one_before)['txs'])
+    amounts=map(lambda t: t['amount'], sign_txs)
+    fees=map(lambda t: t['fee'], spend_txs)
+    total_amount=sum(amounts)
+    total_fee=sum(fees)+transactions.block_fee(one_before)
+    return tx['amount']/total_amount*fee
+def winner(B, M, ran, my_address, j):
+    b=hash2int('f'*64)*64*B/(200*M)
+    a=hash2int(det_hash(str(ran)+str(my_address)+str([j])))
+    return a<b
+def entropy_bit(length):#too slow
+    block=db_get(length)
+    txs=block['txs']
+    txs=filter(lambda t: t['type']=='sign', txs)
+    accs=map(lambda t: db_get(addr(t)), txs)
+    yea=0
+    nay=0
+    for acc in accs:
+        a=acc['entopy'][str(length)]
+        if a['vote']==0:
+            nay+=a['power']
+        else:
+            yea+=a['power']
+    if nay>yea: return 0
+    return 1
+def det_random(length):
+    #returns random seed to elect signers for the next block.
+    def mean(l): return sorted(l)[len(l)/2]
+    ran=[]
+    for i in range(custom.medium_time/2):
+        a=length-custom.long_time*2-custom.medium_time-i
+        if a<0:
+            ran.append(a)
+        else:
+            ran.append(entropy_bit(a))
+    out=[]
+    while ran!=[]:
+        a=min(17, len(ran))
+        l=ran[0:a]
+        ran=ran[a:]
+        out.append(mean(l))
+    return det_hash(out)
 

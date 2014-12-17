@@ -50,7 +50,7 @@ from here http://vitalik.ca/ethereum/patricia.html
 An idea that Vlad Zamfir explained to me:
 The total amount of money spent in a block must be less than or equal to the total amount of safety deposits left by the people who signed on that block. That way, any double-spend attack ends up costing more money than can be stolen. All the safety deposits are deleted. 
 
-My slasher will have 4 transaction types:
+My slasher will have ~4 transaction types:
 1) spend money 
 2) sign on a block to help make the next valid block. 
 3) punish someone who signed on contradictory chains. (not yet implemented)

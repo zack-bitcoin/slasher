@@ -48,7 +48,7 @@ def ask_for_count(peer):
         return
     peers[peer]['diffLength']=block_count['diffLength']
     peers[peer]['length']=block_count['length']
-    tools.db_put('peers', peers)
+    tools.local_put('peers', peers)
 def trade_peers(peer):
     peers=tools.local_get('peers')
     peer_length=peers[peer]['length']
@@ -122,7 +122,7 @@ def main_once(DB):
     else:
         a*=60
     pr[keys[i]]['lag']+=a
-    tools.db_put('peers', pr)
+    tools.local_put('peers', pr)
 
 
 

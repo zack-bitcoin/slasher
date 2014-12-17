@@ -754,10 +754,10 @@ def verify_spv_proof(root, key, proof):
         t.db.put(H, R)
     try:
         t.root_hash = root
-        t.get(key)
-        return True
+        return rlp.decode(t.get(key))
+        #return True
     except Exception, e:
-        print e
+        #print e
         return False
 
 

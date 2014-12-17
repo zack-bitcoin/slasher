@@ -18,7 +18,7 @@ default_spend_fee=1000
 # Lower limits on what the "time" tag in a block can say.
 #get rid of decimal.
 #for vitalik's slasher, 3000, 1000, 100
-long_time=18
+long_time=18#each needs to be at least 3x bigger 
 medium_time=6
 short_time=2
 maximum_deposit=all_money/signers/long_time/2

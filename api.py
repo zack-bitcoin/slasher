@@ -101,7 +101,7 @@ def stop_(DB, args):
     return('turning off all threads')
 def commands(DB, args): return sorted(Do.keys()+['start', 'new_address'])
 def default_block(n, txs=[]):
-    return({'length':int(n), 'txs':txs, 'version':custom.version, 'block_hash':'', 'entropy':tools.entropy(txs)})
+    return({'length':int(n), 'txs':txs, 'version':custom.version, 'block_hash':''})
 def buy_block(DB, args):
     length=tools.local_get('length')
     prev_block=tools.db_get(length)
@@ -109,7 +109,8 @@ def buy_block(DB, args):
     to_hash=''
     if length>-1: to_hash={'prev':prev_block['block_hash'], 'txs':block['txs']}
     block['block_hash']=tools.det_hash(to_hash)
-    block['patty_root']=tools.db_root()
+    block['root_hash']=tools.db_root()
+    tools.log('in buy_block, root hash: ' +str(block['root_hash']))
     block=sign(block, tools.local_get('privkey'))
     block = tools.unpackage(tools.package(block))
     DB['suggested_blocks'].put(block)

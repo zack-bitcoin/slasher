@@ -1,12 +1,14 @@
 """This file explains how we tell if a transaction is valid or not, it explains
 how we update the database when new transactions are added to the blockchain."""
+#Whether you are a signer depends on:
+#5000=long_time*2-medium_time
+#500=medium_time/2
+#K-5000: how much money you had at this point.
+#K-5000, -4500: random numbers selected here
+#K-2500, -1000: random numbers revealed in this range
+#K: sign on this block and make deposit and give hash(secret)
+#K+2500, +3500: get reward. slasher is no longer possible. reveals secret
 
-#steps
-#K-3000: based on how much money you had at this point in time
-#K-2000: using random numbers from this point in time
-#K: sign on block and make a deposit
-#K+3000 to K+3100: get reward
-#K to K+3000: it is possible to slasher the deposit
 import blockchain, custom, copy, tools
 E_check=tools.E_check
 def sigs_match(Sigs, Pubs, msg):
@@ -70,18 +72,27 @@ def spend_verify(tx, txs, out, DB):
     return True
 def sign_verify(tx, txs, out, DB):
     a=tools.addr(tx)
-    B=tools.db_get(a)['amount']
+    B=tx['B']#verify a proof that addr(tx) actually owned that much money long*2-medium ago.
     M=custom.all_money
     address=tools.addr(tx)
-    #B is balance from 3000 blocks ago.
+    block=tools.db_get(tx['on_block'])
+    num=max(0,tx['on_block']-(custom.long_time*2-custom.medium_time))
+    election_block=tools.db_get(num)
+    if 'root_hash' not in election_block:
+        return False
+    v=tools.db_verify(election_block['root_hash'], address, tx['proof'])
+    if v==False:
+        tools.log('your address did not exist that long ago.')
+        tools.log(tools.db_root()+' '+address+' '+tx['proof'])
+        return False
+    if v['amount']!=tx['B']:
+        tools.log('that is not how much money you had that long ago')
+        return False
     if 'secret_hash' not in tx:
         tools.log('need the hash of a secret')
         return False
-    if 'entropy' not in tx or tx['entropy'] not in [0, 1]:
-        tools.log('needs a bit of entropy:  '+str(tx))
-        return False
     for t in txs:
-        if tools.addr(t)==address:
+        if tools.addr(t)==address and tx['type']=='sign':
             tools.log('can only have one sign tx per block')
             return False
     if len(tx['jackpots'])<1: 
@@ -93,14 +104,14 @@ def sign_verify(tx, txs, out, DB):
     length=tools.local_get('length')
     if tx['on_block']!=length+1:
         out[0]+='this tx is for the wrong block'
-        out[0]+='tx: ' +str(tx)
-        out[0]+='should be: ' +str(length+1)
+        #out[0]+='tx: ' +str(tx)
+        #out[0]+='should be: ' +str(length+1)
         return False
     if tx['on_block']>0:
         if not tx['prev']==tools.db_get(length)['block_hash']:
             tools.log('must give hash of previous block')
             return False
-    ran=det_random(tx['on_block'])
+    ran=tools.det_random(tx['on_block'])
     for j in tx['jackpots']:
         if type(j)!=int or j not in range(200):
                tools.log('bad jackpot')
@@ -108,35 +119,13 @@ def sign_verify(tx, txs, out, DB):
         if len(filter(lambda x: x==j, tx['jackpots']))!=1:
                tools.log('no repeated jackpots')
                return False
-        if not winner(B, M, ran, address, j):
+        if not tools.winner(B, M, ran, address, j):
             tools.log('that jackpot is not valid: '+str(j))
             return False
     if tx['amount']<custom.minimum_deposit:
         tools.log('you have to deposit more than that')
         return False
     return True
-def det_random(length):#this is very slow. we should memoize entropy somewhere.
-    #returns random seed to elect signers.
-    def mean(l): return sorted(l)[len(l)/2]
-    ran=[]
-    for i in range(custom.medium_time/2):
-        a=length-custom.long_time-i
-        if a<0:
-            ran.append(a)
-        else:
-            a=tools.db_get(a)
-            ran.append(a['entropy'])
-    out=[]
-    while ran!=[]:
-        a=min(17, len(ran))
-        l=ran[0:a]
-        ran=ran[a:]
-        out.append(mean(l))
-    return tools.det_hash(out)
-def winner(B, M, ran, my_address, j):
-    b=tools.hash2int('f'*64)*64*B/(200*M)
-    a=tools.hash2int(tools.det_hash(str(ran)+str(my_address)+str([j])))
-    return a<b
 def slasher_verify(tx, txs, out, DB):
     #were the rewards paid out already?
     #are both tx valid?
@@ -144,10 +133,22 @@ def slasher_verify(tx, txs, out, DB):
     #are the tx identical?
     pass
 def reward_verify(tx, txs, out, DB):
-    #make sure they revealed.
+    #bit+salt must match hash(bit+salt)
     #make sure they were not slashed.
     #reward is proportional to percentage of total deposit.
-    pass
+    #make sure power matches the referenced sign tx.
+    #make sure vote matches bit+salt and hash(bit+salt)
+    #make sure tx['on_block'] matches the sign tx
+    #make sure tx['amount'] matches the sign tx.
+    address=tools.addr(tx)
+    relative_reward=tools.relative_reward(tx['on_block'])
+    txs=tools.db_get(tx['on_block'])['txs']
+    txs=filter(lambda t: t==t['sign'], txs)
+    sign_tx=filter(lambda t: tools.addr(t)==address, txs)[0]
+    amount=sign_tx['amount']
+    if tx['amount']!=relative_reward+amount:
+        tools.log('reward wrong size')
+        return False
 tx_check = {'spend':spend_verify,
             'sign':sign_verify,
             'slasher':slasher_verify,
@@ -181,11 +182,12 @@ def slasher(tx, DB, add_block):
     adjust_int(['amount'], tools.addr(tx['tx1']), -tx['amount'], DB, add_block)
     #tx={'amount':10000, 'tx1': , 'tx2': , 'reward_address': }
     #record
-def reward(tx, DB, add_block):#should also reveal entropy_bit and salt
+def reward(tx, DB, add_block):
     address = tools.addr(tx)
-    #if they successfully signed, then reward them. otherwise punish them by taking 2 times the reward from their deposit, and returning the rest to them.
-    #record
-    pass
+    length=tools.db_get('length')
+    adjust_dict(['entropy', tx['on_block']], address, False, {'power':'vote'}, DB, add_block)
+    adjust_int(['amount'], address, tx['amount'], DB, add_block)
+    #give them money back, and a proportional part of othe reward.
 update = {'spend':spend,
           'sign':sign,
           'slasher':slasher,
