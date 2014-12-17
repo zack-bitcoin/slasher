@@ -249,11 +249,12 @@ def entropy_bit(length):#too slow
     yea=0
     nay=0
     for acc in accs:
-        a=acc['entopy'][str(length)]
-        if a['vote']==0:
-            nay+=a['power']
-        else:
-            yea+=a['power']
+        if 'entropy' in acc and str(length) in acc['entropy']:
+            a=acc['entopy'][str(length)]
+            if a['vote']==0:
+                nay+=a['power']
+            else:
+                yea+=a['power']
     if nay>yea: return 0
     return 1
 def det_random(length):
