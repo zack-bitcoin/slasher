@@ -26,14 +26,8 @@ def sigs_match(Sigs, Pubs, msg):
         sigs.remove(sig)
         pubs.remove(a['pub'])
     return True
-def signature_check(tx):
+def signature_check(tx):#verify that a transaction has a valid ECDSA signature on it.
     tx_copy = copy.deepcopy(tx)
-    if not E_check(tx, 'signatures', list):
-        tools.log('no signautres')
-        return False
-    if not E_check(tx, 'pubkeys', list):
-        tools.log('no pubkeys')
-        return False
     tx_copy.pop('signatures')
     if len(tx['pubkeys']) == 0:
         tools.log('pubkey error')
@@ -49,9 +43,6 @@ def signature_check(tx):
     return True
 
 def spend_verify(tx, txs, out, DB):
-    if not E_check(tx, 'to', [str, unicode]):
-        out[0]+='no to'
-        return False
     if not signature_check(tx):
         out[0]+='signature check'
         return False
@@ -59,18 +50,11 @@ def spend_verify(tx, txs, out, DB):
         out[0]+='that address is too short'
         out[0]+='tx: ' +str(tx)
         return False
-    if not E_check(tx, 'amount', int):
-        out[0]+='no amount'
-        return False
     if not tools.fee_check(tx, txs, DB):
         out[0]+='fee check error'
         return False
-    if 'vote_id' in tx:
-        if not tx['to'][:-29]=='11':
-            out[0]+='cannot hold votecoins in a multisig address'
-            return False
     return True
-def sign_verify(tx, txs, out, DB):
+def sign_verify(tx, txs, out, DB):#check the validity of a transaction of type sign.
     a=tools.addr(tx)
     B=tx['B']#verify a proof that addr(tx) actually owned that much money long*2-medium ago.
     M=custom.all_money
@@ -78,6 +62,9 @@ def sign_verify(tx, txs, out, DB):
     block=tools.db_get(tx['on_block'])
     num=max(0,tx['on_block']-(custom.long_time*2-custom.medium_time))
     election_block=tools.db_get(num)
+    if not signature_check(tx):
+        out[0]+='signature check'
+        return False
     if 'root_hash' not in election_block:
         return False
     v=tools.db_verify(election_block['root_hash'], address, tx['proof'])
@@ -191,6 +178,7 @@ def slasher(tx, DB, add_block):
 def reward(tx, DB, add_block):
     address = tools.addr(tx)
     length=tools.db_get('length')
+    adjust_string(['secrets', tx['on_block'], 'slashed'], tools.addr(tx['tx1']), False, True, DB, add_block)
     adjust_dict(['entropy'], address, False, {str(tx['on_block']):{'power':len(tx['jackpots']),'vote':tx['entropy']}}, DB, add_block)
     adjust_int(['amount'], address, tx['amount'], DB, add_block)
     #give them money back, and a proportional part of othe reward.

@@ -24,7 +24,7 @@ def main(brainwallet, pubkey_flag=False):
         {'target': auto_signer.mainloop,
          'args': (),
          'name': 'auto_signer'},        
-        {'target': reward_collector.mainloop,
+        {'target': reward_collector.doit,
          'args': (),
          'name': 'auto_signer'},        
         #{'target':tools.heart_monitor,

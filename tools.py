@@ -227,17 +227,18 @@ if __name__ == "__main__":
         print(time.time()-timea)
     print(time.time()-time_0)
     '''
-def relative_reward(tx):
-    on_block=tx['on_block']
+def relative_reward(on_block, my_address):
     one_before=on_block-1
     txs=db_get(on_block)['txs']
     sign_txs=filter(lambda t: t['type']=='sign', txs)
+    my_sign_tx=filter(lambda t: addr(t)==my_address, sign_txs)[0]
     spend_txs=map(lambda t: t['type']=='spend', db_get(one_before)['txs'])
+    log('spend_txs: ' +str(spend_txs))
     amounts=map(lambda t: t['amount'], sign_txs)
     fees=map(lambda t: t['fee'], spend_txs)
     total_amount=sum(amounts)
-    total_fee=sum(fees)+transactions.block_fee(one_before)
-    return tx['amount']/total_amount*fee
+    total_fee=sum(fees)
+    return (my_sign_tx['amount']/total_amount)*total_fee
 def winner(B, M, ran, my_address, j):
     b=hash2int('f'*64)*64*B/(200*M)
     a=hash2int(det_hash(str(ran)+str(my_address)+str([j])))
