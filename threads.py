@@ -1,6 +1,6 @@
 """This program starts all the threads going. When it hears a kill signal, it kills all the threads.
 """
-import peer_recieve, time, threading, tools, custom, networking, sys, api, blockchain, peers_check, multiprocessing, db, threads, copy, auto_signer
+import peer_recieve, time, threading, tools, custom, networking, sys, api, blockchain, peers_check, multiprocessing, db, threads, copy, auto_signer, reward_collector
 #windows was complaining about lambda
 def peer_recieve_func(d, DB=custom.DB):
     return peer_recieve.main(d, DB)
@@ -22,6 +22,9 @@ def main(brainwallet, pubkey_flag=False):
          'args': (DB['heart_queue'], custom.database_name, tools.log, custom.database_port),
          'name': 'db'},
         {'target': auto_signer.mainloop,
+         'args': (),
+         'name': 'auto_signer'},        
+        {'target': reward_collector.mainloop,
          'args': (),
          'name': 'auto_signer'},        
         #{'target':tools.heart_monitor,

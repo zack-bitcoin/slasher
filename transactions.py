@@ -93,7 +93,7 @@ def sign_verify(tx, txs, out, DB):
         return False
     for t in txs:
         if tools.addr(t)==address and tx['type']=='sign':
-            tools.log('can only have one sign tx per block')
+            #tools.log('can only have one sign tx per block')
             return False
     if len(tx['jackpots'])<1: 
         tools.log('insufficient jackpots')
@@ -104,8 +104,6 @@ def sign_verify(tx, txs, out, DB):
     length=tools.local_get('length')
     if tx['on_block']!=length+1:
         out[0]+='this tx is for the wrong block'
-        #out[0]+='tx: ' +str(tx)
-        #out[0]+='should be: ' +str(length+1)
         return False
     if tx['on_block']>0:
         if not tx['prev']==tools.db_get(length)['block_hash']:
@@ -133,22 +131,29 @@ def slasher_verify(tx, txs, out, DB):
     #are the tx identical?
     pass
 def reward_verify(tx, txs, out, DB):
-    #bit+salt must match hash(bit+salt)
-    #make sure they were not slashed.
-    #reward is proportional to percentage of total deposit.
-    #make sure power matches the referenced sign tx.
-    #make sure vote matches bit+salt and hash(bit+salt)
-    #make sure tx['on_block'] matches the sign tx
-    #make sure tx['amount'] matches the sign tx.
     address=tools.addr(tx)
-    relative_reward=tools.relative_reward(tx['on_block'])
+    acc=tools.db_get(address)
+    relative_reward=tools.relative_reward(tx)
     txs=tools.db_get(tx['on_block'])['txs']
     txs=filter(lambda t: t==t['sign'], txs)
     sign_tx=filter(lambda t: tools.addr(t)==address, txs)[0]
-    amount=sign_tx['amount']
-    if tx['amount']!=relative_reward+amount:
+    length=tools.db_get('length')
+    if length-custom.long_time+custom.medium_time/2>tx['on_block']or length-custom.long_time-custom.medium_time/2<tx['on_block']:
+        tools.log('you did not wait the correct amount of time')
+        return False
+    if acc['secrets'][str(tx['on_block'])]['slashed']:
+        tools.log('you were slashed, so you cannot collect your reward')
+        return False
+    if tx['amount']!=relative_reward+sign_tx['amount']:
         tools.log('reward wrong size')
         return False
+    if sign_tx['secret_hash']!=det_hash(tx['reveal']):
+        tools.log('entropy+salt does not match')
+        return False
+    if tx['reveal']['entropy'] not in [0,1]:
+        tools.log('entropy must be either 0 or 1')
+        return False
+    return True
 tx_check = {'spend':spend_verify,
             'sign':sign_verify,
             'slasher':slasher_verify,
@@ -176,16 +181,17 @@ def spend(tx, DB, add_block):
 def sign(tx, DB, add_block):#should include hash(entroy_bit and salt)
     address = tools.addr(tx)
     adjust_int(['amount'], address, -tx['amount'], DB, add_block)
+    adjust_dict(['secrets'], address, False, {str(tx['on_block']):{'slashed':False}}, DB, add_block)
 def slasher(tx, DB, add_block):
     address = tools.addr(tx)
+    adjust_string(['secrets', tx['on_block'], 'slashed'], tools.addr(tx['tx1']), False, True, DB, add_block)
     adjust_int(['amount'], address, tx['amount']/5, DB, add_block)
-    adjust_int(['amount'], tools.addr(tx['tx1']), -tx['amount'], DB, add_block)
     #tx={'amount':10000, 'tx1': , 'tx2': , 'reward_address': }
     #record
 def reward(tx, DB, add_block):
     address = tools.addr(tx)
     length=tools.db_get('length')
-    adjust_dict(['entropy', tx['on_block']], address, False, {'power':'vote'}, DB, add_block)
+    adjust_dict(['entropy'], address, False, {str(tx['on_block']):{'power':len(tx['jackpots']),'vote':tx['entropy']}}, DB, add_block)
     adjust_int(['amount'], address, tx['amount'], DB, add_block)
     #give them money back, and a proportional part of othe reward.
 update = {'spend':spend,

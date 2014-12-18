@@ -110,7 +110,6 @@ def buy_block(DB, args):
     if length>-1: to_hash={'prev':prev_block['block_hash'], 'txs':block['txs']}
     block['block_hash']=tools.det_hash(to_hash)
     block['root_hash']=tools.db_root()
-    tools.log('in buy_block, root hash: ' +str(block['root_hash']))
     block=sign(block, tools.local_get('privkey'))
     block = tools.unpackage(tools.package(block))
     DB['suggested_blocks'].put(block)

@@ -101,7 +101,7 @@ def add_block(block_pair, recent_hashes, DB={}):
         return sorted(mylist)[len(mylist) / 2]
 
     def block_check(block, DB):
-        def log_(txt): return tools.log(txt)
+        def log_(txt): pass #return tools.log(txt)
         def tx_check(txs):
             if len(txs)==0: return False
             start = copy.deepcopy(txs)
@@ -164,9 +164,9 @@ def add_block(block_pair, recent_hashes, DB={}):
     if 'block_hash' in block and block['block_hash'] in recent_hashes:
         tools.log('we already have that block')
         return 0
-    tools.log('attempt to add block: ' +str(block))
+    #tools.log('attempt to add block: ' +str(block))
     if block_check(block, DB):
-        tools.log('add_block: ' + str(block))
+        #tools.log('add_block: ' + str(block))
         tools.db_put(block['length'], block, DB)
         tools.local_put('length', block['length'])
         #take money from the creator
@@ -180,8 +180,6 @@ def add_block(block_pair, recent_hashes, DB={}):
         if peer!=False and peers[peer]['blacklist']>0:
             peers[peer]['blacklist']-=1
         tools.local_put('peers', peers)#root hash written on the block is for the state before that block
-        tools.log('create balance_proofs'+str(block['length'])+';'+tools.db_proof(tools.local_get('address')))
-        tools.log('root hash: ' +str(tools.db_root()))#this is what I am actually working on.
         tools.local_put('balance_proofs'+str(block['length']),tools.db_proof(tools.local_get('address')))
     elif not peer==False:
         peers=tools.local_get('peers')

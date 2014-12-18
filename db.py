@@ -2,7 +2,7 @@ from multiprocessing import Process
 import os
 import json
 import leveldb
-def default_entry(): return dict(count=0, amount=0)
+def default_entry(): return dict(count=0, amount=0, secrets={}, entropy={})
 def main(heart_queue, database_name, logf, database_port):
     import networking
     import sys

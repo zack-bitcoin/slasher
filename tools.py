@@ -227,7 +227,8 @@ if __name__ == "__main__":
         print(time.time()-timea)
     print(time.time()-time_0)
     '''
-def relative_reward(on_block):
+def relative_reward(tx):
+    on_block=tx['on_block']
     one_before=on_block-1
     txs=db_get(on_block)['txs']
     sign_txs=filter(lambda t: t['type']=='sign', txs)
@@ -249,7 +250,7 @@ def entropy_bit(length):#too slow
     yea=0
     nay=0
     for acc in accs:
-        if 'entropy' in acc and str(length) in acc['entropy']:
+        if str(length) in acc['entropy']:
             a=acc['entopy'][str(length)]
             if a['vote']==0:
                 nay+=a['power']
