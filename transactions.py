@@ -80,8 +80,6 @@ def sign_verify(tx, txs, out, DB):#check the validity of a transaction of type s
         tools.log('need the hash of a secret')
         return False
     for t in txs:
-        tools.log('tx: ' +str(tx))
-        tools.log('txs: ' +str(txs))
         if tools.addr(t)==address and t['type']=='sign':
             tools.log('can only have one sign tx per block')
             return False
@@ -133,11 +131,14 @@ def reward_verify(tx, txs, out, DB):
     relative_reward=tools.relative_reward(tx['on_block'], address)
     sign_tx=sign_transaction(tx['on_block'], address)
     length=tools.local_get('length')
+    if len(sign_tx['jackpots'])!=tx['jackpots']:
+        tools.log('wrong number of jackpots')
+        return False
     if length-custom.long_time+custom.medium_time/2<tx['on_block']or length-custom.long_time-custom.medium_time/2>tx['on_block']:
         tools.log('you did not wait the correct amount of time')
         return False
     if acc['secrets'][str(tx['on_block'])]['slashed']:
-        tools.log('you were slashed, so you cannot collect your reward')
+        tools.log('you were slashed, or you already claimed your reward at this height')
         return False
     if tx['amount']!=relative_reward+sign_tx['amount']:
         tools.log('reward wrong size')
@@ -197,9 +198,8 @@ def reward(tx, DB, add_block):
     address = tools.addr(tx)
     length=tools.db_get('length')
     adjust_string(['secrets', tx['on_block'], 'slashed'], address, False, True, DB, add_block)
-    adjust_dict(['entropy'], address, False, {str(tx['on_block']):{'power':len(tx['jackpots']),'vote':tx['entropy']}}, DB, add_block)
+    adjust_dict(['entropy'], address, False, {str(tx['on_block']):{'power':tx['jackpots'],'vote':tx['reveal']}}, DB, add_block)
     adjust_int(['amount'], address, tx['amount'], DB, add_block)
-    #give them money back, and a proportional part of othe reward.
 update = {'spend':spend,
           'sign':sign,
           'slasher':slasher,

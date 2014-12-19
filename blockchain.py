@@ -22,11 +22,9 @@ def add_tx(tx, DB={}):
     '''
     def type_check(tx, txs):
         if not tools.E_check(tx, 'type', [str, unicode]):
-            tools.log('blockchain type')
             out[0]+='blockchain type'
             return False
         if tx['type'] not in transactions.tx_check:
-            tools.log('bad type')
             out[0]+='bad type'
             return False
         return True
@@ -35,22 +33,18 @@ def add_tx(tx, DB={}):
     def verify_tx(tx, txs, out):
         #do not allow tx which fail to reference one of the 10 most recent blocks. do not allow tx which have an identical copy in the last 10 blocks.
         if not type_check(tx, txs):
-            tools.log('type error')
             out[0]+='type error'
             return False
         if tx in txs:
-            tools.log('no duplicates')
             out[0]+='no duplicates'
             return False
         #if verify_count(tx, txs):
         #    out[0]+='count error'
         #    return False
         if too_big_block(tx, txs):
-            tools.log('too many txs')
             out[0]+='too many txs'
             return False
         if not transactions.tx_check[tx['type']](tx, txs, out, DB):
-            tools.log('tx: ' +str(tx))
             out[0]+= 'tx: ' + str(tx)
             return False
         return True
@@ -105,7 +99,7 @@ def add_block(block_pair, recent_hashes, DB={}):
         return sorted(mylist)[len(mylist) / 2]
 
     def block_check(block, DB):
-        def log_(txt): return tools.log(txt)
+        def log_(txt): pass #return tools.log(txt)
         def tx_check(txs):
             if len(txs)==0: return False
             start = copy.deepcopy(txs)
@@ -176,12 +170,17 @@ def add_block(block_pair, recent_hashes, DB={}):
     if block_check(block, DB):
         #tools.log('add_block: ' + str(block))
         tools.db_put(block['length'], block, DB)
-        tools.local_put('length', block['length'])
         #take money from the creator
+        tools.local_put('length', block['length'])
         orphans = tools.local_get('txs')
         tools.local_put('txs', [])
         for tx in block['txs']:
-            transactions.update[tx['type']](tx, DB, True)
+            try:
+                transactions.update[tx['type']](tx, DB, True)
+            except Exception as exc:
+                tools.log('blockchain broke while adding block. Current datafiles are probably corrupted, and should be deleted.')
+                tools.log(exc)
+                error()
         for tx in orphans:
             add_tx(tx, DB)
         peers=tools.local_get('peers')

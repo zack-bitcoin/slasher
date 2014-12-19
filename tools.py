@@ -47,7 +47,7 @@ def entropy(txs):
     else: return 0
 def get_(loc, thing): 
     if loc==[]: return thing
-    return get_(loc[1:], thing[loc[0]])
+    return get_(loc[1:], thing[str(loc[0])])
 def set_(loc, dic, val):
     get_(loc[:-1], dic)[loc[-1]] = val
     return dic
@@ -233,7 +233,7 @@ def relative_reward(on_block, my_address):
     sign_txs=filter(lambda t: t['type']=='sign', txs)
     my_sign_tx=filter(lambda t: addr(t)==my_address, sign_txs)[0]
     spend_txs=filter(lambda t: t['type']=='spend', db_get(one_before)['txs'])
-    log('spend_txs: ' +str(spend_txs))
+    #log('spend_txs: ' +str(spend_txs))
     amounts=map(lambda t: t['amount'], sign_txs)
     fees=map(lambda t: t['fee'], spend_txs)
     total_amount=sum(amounts)
@@ -245,15 +245,17 @@ def winner(B, M, ran, my_address, j):
     return a<b
 def entropy_bit(length):#too slow
     block=db_get(length)
+    log('block: ' +str(block))
     txs=block['txs']
     txs=filter(lambda t: t['type']=='sign', txs)
     accs=map(lambda t: db_get(addr(t)), txs)
+    log('accs: ' +str(accs))
     yea=0
     nay=0
     for acc in accs:
         if str(length) in acc['entropy']:
-            a=acc['entopy'][str(length)]
-            if a['vote']==0:
+            a=acc['entropy'][str(length)]
+            if a['vote']['entropy']==0:
                 nay+=a['power']
             else:
                 yea+=a['power']
