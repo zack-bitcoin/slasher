@@ -12,7 +12,7 @@ version = "0.0001"
 all_money=21*10**15
 creator='115nxUddLmxijWskiz5znHxk1KdMZpS'#the password to make this address is: "brainwallet"
 max_key_length=6**4
-block_reward = 10 ** 5
+block_fee = 100000
 signers=64
 default_spend_fee=1000
 # Lower limits on what the "time" tag in a block can say.

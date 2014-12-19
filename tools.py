@@ -13,12 +13,16 @@ def int2hash(a): return buffer_(str(hex(a))[2:], 64)
 def hash2int(a): return int(str(a), 16)
 def cost_0(txs, address):
     #cost of the zeroth confirmation transactions
+    def spend(t):
+        return int(t['fee'])+int(t['amount'])
+    def mint(t):
+        return t['amount']
+    do={'mint':mint, 'spend':spend}
     total_cost = []
     txs=filter(lambda t: address == addr(t), txs)
-    txs=filter(lambda t: t['type']=='spend', txs)
+    txs=filter(lambda t: t['type'] in do.keys(), txs)
     for t in txs:
-        total_cost.append(t['fee'])
-        total_cost.appnd(t['amount'])
+        total_cost.append(do[t['type']](t))
     return sum(total_cost)
 def block_fee(length): return 10**9#total blocks is all_money divided by this. 21000000 blocks in this case
 #assume it takes 0.5 seconds to process each block. If someone with 1% money does DDOS, total_blocks/200 seconds is how long they can. I am aiming for 1% of money to be able to DDOS for 1 day.
@@ -56,6 +60,7 @@ def adjust(pubkey, DB, f):#location shouldn't be here.
     f(acc)
     db_put(pubkey, acc, DB)    
 def adjust_int(key, pubkey, amount, DB, add_block):
+    amount=int(amount)
     def f(acc, amount=amount):
         if not add_block: amount=-amount
         set_(key, acc, (get_(key, acc) + amount))
@@ -278,4 +283,8 @@ def det_random(length):
         ran=ran[a:]
         out.append(mean(l))
     return det_hash(out)
+def mint_cost(txs):
+    spends=filter(lambda x: x['type']=='spend', txs)
+    fees=map(lambda t: int(t['fee']), spends)
+    return sum(fees)-custom.block_fee#maybe I should only get half the fees, and give other half to signers?
 

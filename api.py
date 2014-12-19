@@ -102,15 +102,23 @@ def stop_(DB, args):
 def commands(DB, args): return sorted(Do.keys()+['start', 'new_address'])
 def default_block(n, txs=[]):
     return({'length':int(n), 'txs':txs, 'version':custom.version, 'block_hash':''})
+def mint_tx():
+    txs=tools.local_get('txs')
+    spends=filter(lambda x: x['type']=='spend', txs)
+    fees=map(lambda t: int(t['fee']), spends)
+    amount=sum(fees)-custom.block_fee
+    return {'type':'mint', 'amount':tools.mint_cost(txs)}
 def buy_block(DB, args):
     length=tools.local_get('length')
     prev_block=tools.db_get(length)
-    block=default_block(length+1, tools.local_get('txs'))
+    txs=tools.local_get('txs')
+    privkey=tools.local_get('privkey')
+    block=default_block(length+1, txs+[sign(mint_tx(), privkey)])
     to_hash=''
     if length>-1: to_hash={'prev':prev_block['block_hash'], 'txs':block['txs']}
     block['block_hash']=tools.det_hash(to_hash)
     block['root_hash']=tools.db_root()
-    block=sign(block, tools.local_get('privkey'))
+    block=sign(block, privkey)
     block = tools.unpackage(tools.package(block))
     DB['suggested_blocks'].put(block)
     return block

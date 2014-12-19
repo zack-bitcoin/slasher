@@ -110,7 +110,7 @@ def add_block(block_pair, recent_hashes, DB={}):
                 if start == []:
                     return False  # Block passes this test
                 start_copy = copy.deepcopy(start)
-                if transactions.tx_check[start[-1]['type']](start[-1], out, invalid_because, DB):
+                if transactions.tx_check[start[0]['type']](start[0], out, invalid_because, DB):#might need to change -1 to 0
                     out.append(start.pop())
                 else:
                     tools.log('invalid tx: '+str(invalid_because[0]))
@@ -131,12 +131,10 @@ def add_block(block_pair, recent_hashes, DB={}):
         if block['root_hash']!=tools.db_root():
             log_('bad root')
             return False
-        for tx in block['txs']:
-            a=tools.addr(tx)
-            if a==block_creator_address:
-                if tx['type']=='spend':
-                    log_('the block creator cannot have tx fees in his own block:'+str(tx))
-                    return False
+        txs=filter(lambda x: x['type']=='mint', block['txs'])
+        if len(txs)!=1:
+            log_('wrong number of mint txs')
+            return False
         block_creator=tools.db_get(block_creator_address)
         if block_creator['amount']<tools.block_fee(block['length'])+tools.cost_0(block['txs'], block_creator_address):
             log_('you cannot afford to create a block')

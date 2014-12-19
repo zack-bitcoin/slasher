@@ -41,7 +41,17 @@ def signature_check(tx):#verify that a transaction has a valid ECDSA signature o
         tools.log('sigs do not match')
         return False
     return True
-
+def mint_verify(tx, txs, out, DB):
+    if len(filter(lambda x: x['type']=='mint', txs))>0:
+        out[0]+='too many mints'
+        return False
+    amount=tools.mint_cost(txs)
+    if tx['amount']>amount:
+        tools.log('have: ' +str(tx['amount']))
+        tools.log('need: ' +str(amount))
+        tools.log('that amount is too big')
+        return False
+    return True
 def spend_verify(tx, txs, out, DB):
     if not signature_check(tx):
         out[0]+='signature check'
@@ -159,7 +169,8 @@ def reward_verify(tx, txs, out, DB):
         tools.log('entropy must be either 0 or 1')
         return False
     return True
-tx_check = {'spend':spend_verify,
+tx_check = {'mint':mint_verify,
+            'spend':spend_verify,
             'sign':sign_verify,
             'slasher':slasher_verify,
             'reward':reward_verify}
@@ -178,15 +189,18 @@ adjust_string=tools.adjust_string
 adjust_dict=tools.adjust_dict
 adjust_list=tools.adjust_list
 symmetric_put=tools.symmetric_put
+def mint(tx, DB, add_block):
+    address = tools.addr(tx)
+    adjust_int(['amount'], address, tx['amount'], DB, add_block)
 def spend(tx, DB, add_block):
     address = tools.addr(tx)
-    adjust_int(['amount'], address, -tx['amount'], DB, add_block)
+    adjust_int(['amount'], address, -int(tx['amount']), DB, add_block)
     adjust_int(['amount'], tx['to'], tx['amount'], DB, add_block)
     #adjust_int(['amount'], address, -custom.fee, DB, add_block)
-    adjust_int(['amount'], address, -tx['fee'], DB, add_block)
+    adjust_int(['amount'], address, -int(tx['fee']), DB, add_block)
 def sign(tx, DB, add_block):#should include hash(entroy_bit and salt)
     address = tools.addr(tx)
-    adjust_int(['amount'], address, -tx['amount'], DB, add_block)
+    adjust_int(['amount'], address, -int(tx['amount']), DB, add_block)
     adjust_dict(['secrets'], address, False, {str(tx['on_block']):{'slashed':False}}, DB, add_block)
 def slasher(tx, DB, add_block):
     address = tools.addr(tx)
@@ -200,7 +214,8 @@ def reward(tx, DB, add_block):
     adjust_string(['secrets', tx['on_block'], 'slashed'], address, False, True, DB, add_block)
     adjust_dict(['entropy'], address, False, {str(tx['on_block']):{'power':tx['jackpots'],'vote':tx['reveal']}}, DB, add_block)
     adjust_int(['amount'], address, tx['amount'], DB, add_block)
-update = {'spend':spend,
+update = {'mint':mint,
+          'spend':spend,
           'sign':sign,
           'slasher':slasher,
           'reward':reward}
