@@ -11,18 +11,19 @@ def create_reward_tx():
     txs=tools.db_get(tx['on_block'])['txs']
     txs=filter(lambda t: t['type']=='sign', txs)
     address=tools.local_get('address')
-    tools.log('on block: ' +str(tx['on_block']))
+    #tools.log('on block: ' +str(tx['on_block']))
+    #tools.log('txs: ' +str(txs))
     sign_tx=filter(lambda t: tools.addr(t)==address, txs)[0]
+    #tools.log('txs: ' +str(sign_tx))
     relative_reward=tools.relative_reward(tx['on_block'], address)
-    
     tx['amount']=relative_reward+sign_tx['amount']
+    tx['reveal']=tools.local_get('secrets')[str(tx['on_block'])]
     return tx
 def mainloop():
     while True:
         time.sleep(1)
         tx=create_reward_tx()
         if 'error' not in tx:
-            tools.log('reward collector tx: ' +str(tx))
             api.easy_add_transaction(tx)
 def doit():
     try:

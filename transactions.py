@@ -66,6 +66,7 @@ def sign_verify(tx, txs, out, DB):#check the validity of a transaction of type s
         out[0]+='signature check'
         return False
     if 'root_hash' not in election_block:
+        out[0]+='no root hash'
         return False
     v=tools.db_verify(election_block['root_hash'], address, tx['proof'])
     if v==False:
@@ -79,8 +80,10 @@ def sign_verify(tx, txs, out, DB):#check the validity of a transaction of type s
         tools.log('need the hash of a secret')
         return False
     for t in txs:
-        if tools.addr(t)==address and tx['type']=='sign':
-            #tools.log('can only have one sign tx per block')
+        tools.log('tx: ' +str(tx))
+        tools.log('txs: ' +str(txs))
+        if tools.addr(t)==address and t['type']=='sign':
+            tools.log('can only have one sign tx per block')
             return False
     if len(tx['jackpots'])<1: 
         tools.log('insufficient jackpots')
@@ -117,15 +120,20 @@ def slasher_verify(tx, txs, out, DB):
     #do they both sign on the same length?
     #are the tx identical?
     pass
+def sign_transaction(length, address):
+    if length<=0:
+        return {'secret_hash':0}
+    txs=tools.db_get(length)['txs']
+    txs=filter(lambda t: t['type']=='sign', txs)
+    txs=filter(lambda t: tools.addr(t)==address, txs)
+    return(txs[0])
 def reward_verify(tx, txs, out, DB):
     address=tools.addr(tx)
     acc=tools.db_get(address)
-    relative_reward=tools.relative_reward(tx)
-    txs=tools.db_get(tx['on_block'])['txs']
-    txs=filter(lambda t: t==t['sign'], txs)
-    sign_tx=filter(lambda t: tools.addr(t)==address, txs)[0]
-    length=tools.db_get('length')
-    if length-custom.long_time+custom.medium_time/2>tx['on_block']or length-custom.long_time-custom.medium_time/2<tx['on_block']:
+    relative_reward=tools.relative_reward(tx['on_block'], address)
+    sign_tx=sign_transaction(tx['on_block'], address)
+    length=tools.local_get('length')
+    if length-custom.long_time+custom.medium_time/2<tx['on_block']or length-custom.long_time-custom.medium_time/2>tx['on_block']:
         tools.log('you did not wait the correct amount of time')
         return False
     if acc['secrets'][str(tx['on_block'])]['slashed']:
@@ -134,7 +142,16 @@ def reward_verify(tx, txs, out, DB):
     if tx['amount']!=relative_reward+sign_tx['amount']:
         tools.log('reward wrong size')
         return False
-    if sign_tx['secret_hash']!=det_hash(tx['reveal']):
+    if sign_tx['secret_hash']!=tools.det_hash(tx['reveal']):
+        tools.log('need: ' +str(sign_tx['secret_hash']))
+        tools.log('need: ' +str(sign_tx))
+        tools.log('have: ' +str(tx))
+        tools.log('have: ' +str(tx['reveal']))
+        tools.log('have: ' +str(tools.det_hash(tx['reveal'])))
+        tools.log('local get: ' +str(tools.local_get('secrets')[str(tx['on_block'])]))
+        tools.log('on block: ' +str(tx['on_block']))
+        for i in range(5):
+            tools.log('recent ' +str(sign_transaction(int(tx['on_block'])-2+i, address)['secret_hash']))
         tools.log('entropy+salt does not match')
         return False
     if tx['reveal']['entropy'] not in [0,1]:
@@ -156,6 +173,7 @@ tx_check = {'spend':spend_verify,
 '''
 #------------------------------------------------------
 adjust_int=tools.adjust_int
+adjust_string=tools.adjust_string
 adjust_dict=tools.adjust_dict
 adjust_list=tools.adjust_list
 symmetric_put=tools.symmetric_put
@@ -178,7 +196,7 @@ def slasher(tx, DB, add_block):
 def reward(tx, DB, add_block):
     address = tools.addr(tx)
     length=tools.db_get('length')
-    adjust_string(['secrets', tx['on_block'], 'slashed'], tools.addr(tx['tx1']), False, True, DB, add_block)
+    adjust_string(['secrets', tx['on_block'], 'slashed'], address, False, True, DB, add_block)
     adjust_dict(['entropy'], address, False, {str(tx['on_block']):{'power':len(tx['jackpots']),'vote':tx['entropy']}}, DB, add_block)
     adjust_int(['amount'], address, tx['amount'], DB, add_block)
     #give them money back, and a proportional part of othe reward.

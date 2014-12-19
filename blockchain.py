@@ -22,11 +22,11 @@ def add_tx(tx, DB={}):
     '''
     def type_check(tx, txs):
         if not tools.E_check(tx, 'type', [str, unicode]):
+            tools.log('blockchain type')
             out[0]+='blockchain type'
             return False
-        if tx['type'] == 'mint':
-            return False
         if tx['type'] not in transactions.tx_check:
+            tools.log('bad type')
             out[0]+='bad type'
             return False
         return True
@@ -35,18 +35,22 @@ def add_tx(tx, DB={}):
     def verify_tx(tx, txs, out):
         #do not allow tx which fail to reference one of the 10 most recent blocks. do not allow tx which have an identical copy in the last 10 blocks.
         if not type_check(tx, txs):
+            tools.log('type error')
             out[0]+='type error'
             return False
         if tx in txs:
+            tools.log('no duplicates')
             out[0]+='no duplicates'
             return False
         #if verify_count(tx, txs):
         #    out[0]+='count error'
         #    return False
         if too_big_block(tx, txs):
+            tools.log('too many txs')
             out[0]+='too many txs'
             return False
         if not transactions.tx_check[tx['type']](tx, txs, out, DB):
+            tools.log('tx: ' +str(tx))
             out[0]+= 'tx: ' + str(tx)
             return False
         return True
@@ -101,23 +105,27 @@ def add_block(block_pair, recent_hashes, DB={}):
         return sorted(mylist)[len(mylist) / 2]
 
     def block_check(block, DB):
-        def log_(txt): pass #return tools.log(txt)
+        def log_(txt): return tools.log(txt)
         def tx_check(txs):
             if len(txs)==0: return False
             start = copy.deepcopy(txs)
             out = []
             start_copy = []
+            invalid_because = ['']
             while start != start_copy:
                 if start == []:
                     return False  # Block passes this test
                 start_copy = copy.deepcopy(start)
-                if transactions.tx_check[start[-1]['type']](start[-1], out, [''], DB):
+                if transactions.tx_check[start[-1]['type']](start[-1], out, invalid_because, DB):
                     out.append(start.pop())
                 else:
+                    tools.log('invalid tx: '+str(invalid_because[0]))
                     return True  # Block is invalid
             tools.log('block invalid because it has no txs')
             return True  # Block is invalid
-        if 'error' in block: return False
+        if 'error' in block: 
+            log_('error in block')
+            return False
         length =tools.local_get('length')
         if type(block['length'])!=type(1): 
             log_('wrong length type')

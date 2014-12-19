@@ -27,11 +27,15 @@ def create_sign_tx():
         if proof=='empty':
             time.sleep(1)
             return {'error':'not ready'}
-        secret={'salt':str(random.random())+str(random.random()), 'entropy':random.randint(0,1)}
         secrets=tools.local_get('secrets')
-        secrets[str(on_block)]=secret
-        tools.local_put('secrets', secrets)
+        if str(on_block) in secrets:
+            secret=secrets[str(on_block)]
+        else:
+            secret=tools.unpackage(tools.package({'salt':str(random.random())+str(random.random()), 'entropy':random.randint(0,1)}))
+            secrets[str(on_block)]=secret
+            tools.local_put('secrets', secrets)
         tx['secret_hash']=tools.det_hash(secret)
+        tx['exposed']=secret
         if on_block>0:
             tx['prev']=tools.db_get(on_block-1)['block_hash']
     else:

@@ -232,7 +232,7 @@ def relative_reward(on_block, my_address):
     txs=db_get(on_block)['txs']
     sign_txs=filter(lambda t: t['type']=='sign', txs)
     my_sign_tx=filter(lambda t: addr(t)==my_address, sign_txs)[0]
-    spend_txs=map(lambda t: t['type']=='spend', db_get(one_before)['txs'])
+    spend_txs=filter(lambda t: t['type']=='spend', db_get(one_before)['txs'])
     log('spend_txs: ' +str(spend_txs))
     amounts=map(lambda t: t['amount'], sign_txs)
     fees=map(lambda t: t['fee'], spend_txs)
