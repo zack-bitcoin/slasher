@@ -1,5 +1,3 @@
-We cannot share blocks right now because the root_hash of the patricia tree isn't the same.
-
 Maybe the blockmaker should be rewarded for each signer he includes. This would disincentivize him from trying to cheat by including less signers.
 so say minsigners = 10, maxsigners = 15
 
@@ -12,16 +10,10 @@ reward is 20%
 12 signers
 reward is 40%
 
-
-
-write the transaction types for slasher.
+write the slasher transaction type.
 
 Explain all the attack scenarios that you imagined while writing the code, post it on #bitcoin-wizards
 
 minimum amount of money per address (maybe a new tx type for deleting addresses would be useful?)
-
-replace 'count' with the rule that every tx must reference a hash from a recent block, and every tx must be non-identical to every other tx in recent blocks.
-Maybe we should not do this, because micro transactions wont work.
-could be even better to make a transaction type for off-chain transactions.
 
 mini-blockchain proposal

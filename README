@@ -26,15 +26,15 @@ It will take time to download the blockchain.
 
 ====About this software:
 
-This is not yet a functioning cryptocurrency! There is no network of nodes to connect to, but you can start your own chain where you own 100% of the money, and make blocks.
+This is not yet a functioning cryptocurrency! The money does not have value.
 
 I use a lot of Vitalik's ideas.
 From this essay: https://blog.ethereum.org/2014/01/15/slasher-a-punitive-proof-of-stake-algorithm/
 1) his algorithm for selecting signers from the coin-holders, with a small adjustment. 
-2) the punitive transaction type. (not yet implemented)
+2) the punitive transaction type. 
 
 https://blog.ethereum.org/2014/11/25/proof-stake-learned-love-weak-subjectivity/
-1) weak subjectivity (not yet implemented)
+1) weak subjectivity 
 
 https://blog.ethereum.org/2014/07/05/stake/
 1) the low influence random number generator, with a modification. Signers first reveal Hash(bit+salt) and later reveal bit+salt when they collect their reward.
@@ -44,7 +44,7 @@ I use something similar to Daniel Larimer's transactions as proof of stake. Ever
 https://blog.ethereum.org/2014/10/03/slasher-ghost-developments-proof-stake/
 1) creating a new block should cost a large fee. A negative block reward. 
 2) I use something similar to his idea (7), quote: "If there is an insufficient number of signers to sign at a particular block height h, a miner can produce a block with height h+1 directly on top of the block with height h-1 by mining at an 8x higher difficulty (to incentivize this, but still make it less attractive than trying to create a normal block, there is a 6x higher reward). "
-But instead of charging POW, I charge a fee. (not yet implemented)
+But instead of charging POW, I charge a fee. 
 
 from here http://vitalik.ca/ethereum/patricia.html
 1) I took the idea to use Patricia trees so that users can efficiently prove how much money they had at any point in history.
@@ -55,7 +55,7 @@ The total amount of money spent in a block must be less than or equal to the tot
 My slasher will have ~4 transaction types:
 1) spend money 
 2) sign on a block to help make the next valid block. 
-3) punish someone who signed on contradictory chains. (not yet implemented)
-4) redeem your reward for having signed 3000 blocks ago. (not yet implemented)
+3) punish someone who signed on contradictory chains. 
+4) redeem your reward for having signed 3000 blocks ago. 
 
 It will not have a scripting language.
