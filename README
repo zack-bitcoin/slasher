@@ -10,6 +10,8 @@ Donations: 1GbpRPE83Vjg73KFvTVZ4EnS2qNkiLY5TT
 for Ubuntu
 
     git clone https://github.com/zack-bitcoin/slasher.git
+    pip install pysha3
+    pip install bitcoin
     cd slasher
 
 ====RUN A NODE

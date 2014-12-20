@@ -57,6 +57,7 @@ def trade_peers(peer):
     peers=tools.local_get('peers')
     peer_length=peers[peer]['length']
     their_peers=cmd(peer, {'type':'peers'})
+    if type(their_peers)!=dict: return {'error': 'cannot connect'}
     if 'error' in their_peers.keys(): return {'error': 'cannot connect'}
     def minus(a, b): return filter(lambda p: p not in b, a)
     to_them=minus(peers.keys(), their_peers.keys())
