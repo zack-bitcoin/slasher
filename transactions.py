@@ -111,7 +111,6 @@ def sign_verify(tx, txs, out, DB):#check the validity of a transaction of type s
     v=tools.db_verify(election_block['root_hash'], address, tx['proof'])
     if v==False:
         tools.log('your address did not exist that long ago.')
-        tools.log(tools.db_root()+' '+address+' '+tx['proof'])
         return False
     if v['amount']!=tx['B']:
         tools.log('that is not how much money you had that long ago')
@@ -154,11 +153,32 @@ def sign_verify(tx, txs, out, DB):#check the validity of a transaction of type s
         return False
     return True
 def slasher_verify(tx, txs, out, DB):
-    #were the rewards paid out already?
-    #are both tx valid?
-    #do they both sign on the same length?
-    #are the tx identical?
-    pass
+    address=tools.addr(tx)
+    acc=tools.db_get(address)
+    if acc['secrets'][str(tx['on_block'])]['slashed']:
+        tools.log('Someone already slashed them, or they already took the reward.')
+        return False
+    if not sign_verify(tx['tx1'], [], [''], {}):
+        tools.log('one was not a valid tx')
+        return False
+    if not sign_verify(tx['tx2'], [], [''], {}):
+        tools.log('two was not a valid tx')
+        return False
+    tx1=copy.deepcopy(tx['tx1'])
+    tx2=copy.deepcopy(tx['tx2'])
+    tx1.pop('signatures')
+    tx2.pop('signatures')
+    tx1=unpackage(package(tx1))
+    tx2=unpackage(package(tx2))
+    msg1=tools.det_hash(tx1)
+    msg2=tools.det_hash(tx2)
+    if msg1==msg2:
+        tools.log('this is the same tx twice...')
+        return False
+    if tx1['on_block']!=tx2['on_block']:
+        tools.log('these are on different lengths')
+        return False
+    return True
 def sign_transaction(length, address):
     if length<=0:
         return {'secret_hash':0}
