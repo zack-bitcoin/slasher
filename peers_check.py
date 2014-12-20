@@ -7,19 +7,20 @@ def cmd(peer, x): #return networking.send_command(peer, x)
         peer=tools.peer_split(peer)
     return networking.send_command(peer, x)
 def download_blocks(peer, DB, peers_block_count, length):
-    tools.log('download blocks')
+    #tools.log('download blocks')
     b=[max(0, length-10), min(peers_block_count, length+custom.download_many)]
-    tools.log('b: ' +str(b))
+    #tools.log('b: ' +str(b))
     blocks = cmd(peer, {'type': 'rangeRequest', 'range': b})
-    tools.log('b: ' +str(blocks))
+    #tools.log('b: ' +str(blocks))
     if type(blocks)!=list: return -1
     if not isinstance(blocks, list): return []
     length=tools.local_get('length')
-    block=tools.db_get(length)
-    for i in range(10):#this part should be re-written so badly
-        if tools.fork_check(blocks, DB, length, block):
-            blockchain.delete_block(DB)
-            length-=1
+    if length>=0:
+        block=tools.db_get(length)
+        for i in range(10):#this part should be re-written so badly
+            if tools.fork_check(blocks, DB, length, block):
+                blockchain.delete_block(DB)
+                length-=1
     for block in blocks:
         DB['suggested_blocks'].put([block, peer])
     return 0
@@ -77,10 +78,10 @@ def peer_check(peer, DB):
     us = length
     them = peers[peer]['length']
     if them < us:
-        tools.log('less than')
+        #tools.log('less than')
         return give_block(peer, DB, peers[peer]['length'])
     elif us == them:
-        tools.log('equal')
+        #tools.log('equal')
         try:
             return ask_for_txs(peer, DB)
         except Exception as exc:

@@ -35,7 +35,6 @@ def create_sign_tx():
             secrets[str(on_block)]=secret
             tools.local_put('secrets', secrets)
         tx['secret_hash']=tools.det_hash(secret)
-        tx['exposed']=secret
         if on_block>0:
             tx['prev']=tools.db_get(on_block-1)['block_hash']
     else:

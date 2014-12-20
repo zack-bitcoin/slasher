@@ -210,19 +210,23 @@ def s_to_db(c):
 def local_get(k): return s_to_db({'type':'local_get', 'args':[str(k)]})
 def local_put(k, v): return s_to_db({'type':'local_put', 'args':[str(k), v]})
 def db_get(n, DB={}): return s_to_db({'type':'get', 'args':[str(n)]})
-def db_put(key, dic, DB={}): return s_to_db({'type':'put', 'args':[str(key), dic]})
-def db_delete(key, DB={}): return s_to_db({'type':'delete', 'args':[str(key)]})
+def db_put(key, dic, DB={}): 
+    dic=unpackage(package(dic))#keeps it deterministic.
+    return s_to_db({'type':'put', 'args':[str(key), dic]})
+def db_delete(key, DB={}): 
+    return s_to_db({'type':'delete', 'args':[str(key)]})
 def db_existence(key, DB={}): return s_to_db({'type':'existence', 'args':[str(key)]})
 def db_proof(key): return s_to_db({'type':'proof', 'args':[str(key)]})
 def db_verify(root, key, proof): return s_to_db({'type':'verify', 'args':[root, key, proof]})
 def db_root(): return s_to_db({'type':'root', 'args':[]})
 def fork_check(newblocks, DB, length, block):
-    recent_hash = det_hash(block)
-    if len(newblocks)<0:
+    #block is most recent block in our chain
+    recent_hash = block['block_hash']#recent_hash
+    if len(newblocks)<1:
         return False
     #log('newblocks: ' +str(newblocks))
     their_hashes = map(lambda x: x['block_hash'] if x['length']>0 else 0, newblocks)+[det_hash(newblocks[-1])]
-    b=(recent_hash not in their_hashes) and length>newblocks[0]['length']-1 and length<newblocks[-1]['length']
+    b=(recent_hash not in their_hashes) and length>=newblocks[0]['length'] and length<newblocks[-1]['length']
     return b
 if __name__ == "__main__":
     a=POW({'a':'b'})
@@ -242,8 +246,8 @@ def relative_reward(on_block, my_address):
     my_sign_tx=filter(lambda t: addr(t)==my_address, sign_txs)[0]
     spend_txs=filter(lambda t: t['type']=='spend', db_get(one_before)['txs'])
     #log('spend_txs: ' +str(spend_txs))
-    amounts=map(lambda t: t['amount'], sign_txs)
-    fees=map(lambda t: t['fee'], spend_txs)
+    amounts=map(lambda t: int(t['amount']), sign_txs)
+    fees=map(lambda t: int(t['fee']), spend_txs)
     total_amount=sum(amounts)
     total_fee=sum(fees)
     return (my_sign_tx['amount']/total_amount)*total_fee
@@ -253,7 +257,7 @@ def winner(B, M, ran, my_address, j):
     return a<b
 def entropy_bit(length):#too slow
     block=db_get(length)
-    log('block: ' +str(block))
+    #log('block: ' +str(block))
     txs=block['txs']
     txs=filter(lambda t: t['type']=='sign', txs)
     accs=map(lambda t: db_get(addr(t)), txs)

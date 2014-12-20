@@ -35,9 +35,6 @@ def add_tx(tx, DB={}):
         if not type_check(tx, txs):
             out[0]+='type error'
             return False
-        if tx['type']=='mint':
-            out[0]+='no mint repeats'
-            return False
         if tx in txs:
             out[0]+='no duplicates'
             return False
@@ -102,7 +99,7 @@ def add_block(block_pair, recent_hashes, DB={}):
         return sorted(mylist)[len(mylist) / 2]
 
     def block_check(block, DB):
-        def log_(txt): return tools.log(txt)
+        def log_(txt): pass #return tools.log(txt)
         def tx_check(txs):
             if len(txs)==0: return False
             start = copy.deepcopy(txs)
@@ -131,16 +128,16 @@ def add_block(block_pair, recent_hashes, DB={}):
             log_('wrong longth')
             return False
         block_creator_address=tools.addr(block)
+        mint_address=tools.addr(filter(lambda t: t['type']=='mint', block['txs'])[0])
+        if block_creator_address!=mint_address:
+            log_('bad mint')
+            return False
         if block['root_hash']!=tools.db_root():
-            log_('bad root')
+            log_('bad root, have: '+str(tools.db_root())+'  need ' +str(block['root_hash']))
             return False
         txs=filter(lambda x: x['type']=='mint', block['txs'])
         if len(txs)!=1:
             log_('wrong number of mint txs')
-            return False
-        block_creator=tools.db_get(block_creator_address)
-        if block_creator['amount']<tools.block_fee(block['length'])+tools.cost_0(block['txs'], block_creator_address):
-            log_('you cannot afford to create a block')
             return False
         txs=filter(lambda x: x['type']=='sign', block['txs'])
         txs=map(lambda x: len(x['jackpots']), txs)
@@ -165,7 +162,7 @@ def add_block(block_pair, recent_hashes, DB={}):
         block=block_pair
         peer=False
     if 'block_hash' in block and block['block_hash'] in recent_hashes:
-        tools.log('we already have that block')
+        #tools.log('we already have that block:' +str(block))
         return 0
     #tools.log('attempt to add block: ' +str(block))
     if block_check(block, DB):
@@ -220,11 +217,6 @@ def delete_block(DB):
         orphans.append(tx)
         tools.local_put('add_block', False)
         transactions.update[tx['type']](tx, DB, False)
-    block_creator_address=tools.addr(tools.db_get(length))
-    block_creator=tools.db_get(block_creator_address)
-    block_creator['amount']+=tools.block_fee(length)
-    tools.db_put(block_creator_address, block_creator)
-    #return money to the creator
     tools.db_delete(length, DB)
     length-=1
     tools.local_put('length', length)

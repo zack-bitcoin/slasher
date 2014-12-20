@@ -27,7 +27,7 @@ def help_(DB, args):
         'new_address':'type \'./cli.py new_address <brain>\' to make a new privkey, pubkey, and address using the brain wallet=<brain>. If you want to use this address, you need to copy/paste the pubkey into the file custom.py',
         'DB_print':'prints the database that is shared between threads',
         'patty_info':'This is like "info", but it accesses the database that is mirrored accross all the nodes',
-        'info':'prints the contents of an entree in the hashtable. If you want to know what the first block was: info 0, if you want to know about a particular address <addr>: info <addr>, if you want to know about yourself: info my_address',
+        'info':'prints the contents of an entree in the hashtable. If you want to know what the first block was: info 0, if you want to know about a particular address <addr>: info <addr>, if you want to know about yourself: info address',
         'my_address':'tells you your own address',
         'spend':'spends money, in satoshis, to an address <addr>. Example: spend 1000 11j9csj9802hc982c2h09ds 50',
         'blockcount':'returns the number of blocks since the genesis block',
@@ -75,7 +75,7 @@ def spend(DB, args):
         return('not enough inputs')
     if len(args)<3:
         args[2]=custom.default_spend_fee#default fee
-    return easy_add_transaction({'type': 'spend', 'amount': int(args[0]), 'to':args[1], 'fee':args[2]}, DB)
+    return easy_add_transaction({'type': 'spend', 'amount': int(args[0]), 'to':args[1], 'fee':args[2], 'recent_hash':tools.db_get(max(1,int(tools.local_get('length'))-2))['block_hash']}, DB)
 def accumulate_words(l, out=''):
     if len(l)>0: return accumulate_words(l[1:], out+' '+l[0])
     return out
@@ -107,7 +107,8 @@ def mint_tx():
     spends=filter(lambda x: x['type']=='spend', txs)
     fees=map(lambda t: int(t['fee']), spends)
     amount=sum(fees)-custom.block_fee
-    return {'type':'mint', 'amount':tools.mint_cost(txs)}
+    on_block=int(tools.local_get('length'))+1
+    return {'type':'mint', 'amount':tools.mint_cost(txs), 'on_block':on_block}
 def buy_block(DB, args):
     length=tools.local_get('length')
     prev_block=tools.db_get(length)

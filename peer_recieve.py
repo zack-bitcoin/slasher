@@ -37,10 +37,11 @@ def pushblock(dic, DB):
     if 'peer' in dic: peer=dic['peer']
     else: peer=False
     if 'blocks' in dic:
-        for i in range(20):
-            if tools.fork_check(dic['blocks'], DB, length, block):
-                blockchain.delete_block(DB)
-                length-=1
+        if length>=0:
+            for i in range(20):
+                if tools.fork_check(dic['blocks'], DB, length, block):
+                    blockchain.delete_block(DB)
+                    length-=1
         for block in dic['blocks']:
             DB['suggested_blocks'].put([block, peer])
     else:

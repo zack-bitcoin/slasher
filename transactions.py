@@ -42,6 +42,13 @@ def signature_check(tx):#verify that a transaction has a valid ECDSA signature o
         return False
     return True
 def mint_verify(tx, txs, out, DB):
+    length=tools.local_get('length')
+    for t in txs:
+        if t['type']=='mint': 
+            out[0]+='no mint repeats'
+    if tx['on_block']!=length+1:
+        out[0]+='on wrong block'
+        return False
     if len(filter(lambda x: x['type']=='mint', txs))>0:
         out[0]+='too many mints'
         return False
@@ -53,6 +60,29 @@ def mint_verify(tx, txs, out, DB):
         return False
     return True
 def spend_verify(tx, txs, out, DB):
+    txaddr=tools.addr(tx)
+    h=tx['recent_hash']
+    l=tools.local_get('length')
+    r=range(l-10, l)
+    r=filter(lambda l: l>0, r)
+    recent_blocks=map(lambda x:tools.db_get(x), r)
+    recent_hashes=map(lambda x: x['block_hash'], recent_blocks)
+    if h not in recent_hashes:
+        tools.log('recent hash error')
+        return False
+    recent_txs=[]
+    def f(b, recent_txs=recent_txs):
+        recent_txs=recent_txs+b['txs']
+    map(f, recent_blocks)
+    recent_txs=filter(lambda t: t['type']=='spend', recent_txs)
+    recent_txs=filter(lambda t: t['recent_hash']==h, recent_txs)
+    recent_txs=filter(lambda t: t['to']==tx['to'], recent_txs)
+    recent_txs=filter(lambda t: t['amount']==tx['amount'], recent_txs)
+    recent_txs=filter(lambda t: t['fee']==tx['fee'], recent_txs)
+    recent_txs=filter(lambda t: tools.addr(t)==txaddr, recent_txs)
+    if len(recent_txs)>0:
+        out[0]+='no repeated spends'
+        return False
     if not signature_check(tx):
         out[0]+='signature check'
         return False
@@ -91,7 +121,7 @@ def sign_verify(tx, txs, out, DB):#check the validity of a transaction of type s
         return False
     for t in txs:
         if tools.addr(t)==address and t['type']=='sign':
-            tools.log('can only have one sign tx per block')
+            #tools.log('can only have one sign tx per block')
             return False
     if len(tx['jackpots'])<1: 
         tools.log('insufficient jackpots')
@@ -102,6 +132,7 @@ def sign_verify(tx, txs, out, DB):#check the validity of a transaction of type s
     length=tools.local_get('length')
     if tx['on_block']!=length+1:
         out[0]+='this tx is for the wrong block. have '+str(length+1) +' need: ' +str(tx['on_block'])
+        
         return False
     if tx['on_block']>0:
         if not tx['prev']==tools.db_get(length)['block_hash']:
@@ -154,15 +185,6 @@ def reward_verify(tx, txs, out, DB):
         tools.log('reward wrong size')
         return False
     if sign_tx['secret_hash']!=tools.det_hash(tx['reveal']):
-        tools.log('need: ' +str(sign_tx['secret_hash']))
-        tools.log('need: ' +str(sign_tx))
-        tools.log('have: ' +str(tx))
-        tools.log('have: ' +str(tx['reveal']))
-        tools.log('have: ' +str(tools.det_hash(tx['reveal'])))
-        tools.log('local get: ' +str(tools.local_get('secrets')[str(tx['on_block'])]))
-        tools.log('on block: ' +str(tx['on_block']))
-        for i in range(5):
-            tools.log('recent ' +str(sign_transaction(int(tx['on_block'])-2+i, address)['secret_hash']))
         tools.log('entropy+salt does not match')
         return False
     if tx['reveal']['entropy'] not in [0,1]:
