@@ -101,7 +101,7 @@ def sign_verify(tx, txs, out, DB):#check the validity of a transaction of type s
         return False
     length=tools.local_get('length')
     if tx['on_block']!=length+1:
-        out[0]+='this tx is for the wrong block'
+        out[0]+='this tx is for the wrong block. have '+str(length+1) +' need: ' +str(tx['on_block'])
         return False
     if tx['on_block']>0:
         if not tx['prev']==tools.db_get(length)['block_hash']:

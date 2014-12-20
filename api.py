@@ -115,7 +115,7 @@ def buy_block(DB, args):
     privkey=tools.local_get('privkey')
     block=default_block(length+1, txs+[sign(mint_tx(), privkey)])
     to_hash=''
-    if length>-1: to_hash={'prev':prev_block['block_hash'], 'txs':block['txs']}
+    if length>-1: to_hash={'prev_hash':prev_block['block_hash'], 'txs':block['txs']}
     block['block_hash']=tools.det_hash(to_hash)
     block['root_hash']=tools.db_root()
     block=sign(block, privkey)

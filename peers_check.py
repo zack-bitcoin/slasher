@@ -7,8 +7,11 @@ def cmd(peer, x): #return networking.send_command(peer, x)
         peer=tools.peer_split(peer)
     return networking.send_command(peer, x)
 def download_blocks(peer, DB, peers_block_count, length):
+    tools.log('download blocks')
     b=[max(0, length-10), min(peers_block_count, length+custom.download_many)]
+    tools.log('b: ' +str(b))
     blocks = cmd(peer, {'type': 'rangeRequest', 'range': b})
+    tools.log('b: ' +str(blocks))
     if type(blocks)!=list: return -1
     if not isinstance(blocks, list): return []
     length=tools.local_get('length')
@@ -24,6 +27,7 @@ def ask_for_txs(peer, DB):
     txs = cmd(peer, {'type': 'txs'})
     if not isinstance(txs, list):
         return -1
+    txs=filter(lambda t: t['type']!='mint', txs)
     for tx in txs:
         DB['suggested_txs'].put(tx)
     T=tools.local_get('txs')
@@ -46,13 +50,11 @@ def ask_for_count(peer):
         return
     if 'error' in block_count.keys():
         return
-    peers[peer]['diffLength']=block_count['diffLength']
     peers[peer]['length']=block_count['length']
     tools.local_put('peers', peers)
 def trade_peers(peer):
     peers=tools.local_get('peers')
     peer_length=peers[peer]['length']
-    peer_diffLength=peers[peer]['diffLength']
     their_peers=cmd(peer, {'type':'peers'})
     if 'error' in their_peers.keys(): return {'error': 'cannot connect'}
     def minus(a, b): return filter(lambda p: p not in b, a)
@@ -72,16 +74,14 @@ def peer_check(peer, DB):
         if type(out)==dict and 'error' in out: return 1
     peers=tools.local_get('peers')
     length = tools.local_get('length')
-    diffLength= tools.local_get('diffLength')
-    size = max(len(diffLength), len(peers[peer]['diffLength']))
-    us = tools.buffer_(diffLength, size)
-    them = tools.buffer_(peers[peer]['diffLength'], size)
+    us = length
+    them = peers[peer]['length']
     if them < us:
+        tools.log('less than')
         return give_block(peer, DB, peers[peer]['length'])
     elif us == them:
+        tools.log('equal')
         try:
-            ask_for_count(peer)
-            trade_peers(peer)
             return ask_for_txs(peer, DB)
         except Exception as exc:
             tools.log('ask for tx error')

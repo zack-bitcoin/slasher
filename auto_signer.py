@@ -12,8 +12,8 @@ def create_sign_tx():
     proof=tools.local_get('balance_proofs'+str(l))
     a=tools.db_verify(election_block['root_hash'], address, proof)
     if a==False:
-        tools.log('election block: ' +str(election_block))
-        tools.log('proof: ' +str(proof))
+        #tools.log('election block: ' +str(election_block))
+        #tools.log('proof: ' +str(proof))
         return({'error':'not valid proof'})
     old_balance=a['amount']
     M=custom.all_money
@@ -44,6 +44,8 @@ def create_sign_tx():
 #first off, I need to collect a proof of how much money I had at every single block. Deal with jackpots in a seperate thread.
 def mainloop():
     while True:
+        if tools.local_get('stop'):
+            return
         time.sleep(0.1)
         txs=tools.local_get('txs')
         address=tools.local_get('address')

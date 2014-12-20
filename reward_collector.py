@@ -32,6 +32,7 @@ def mainloop():
     while True:
         time.sleep(1)
         tx=create_reward_tx()
+        if tools.local_get('stop'): return
         if 'error' not in tx:
             api.easy_add_transaction(tx)
 def doit():

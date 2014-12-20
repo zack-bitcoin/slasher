@@ -35,6 +35,9 @@ def add_tx(tx, DB={}):
         if not type_check(tx, txs):
             out[0]+='type error'
             return False
+        if tx['type']=='mint':
+            out[0]+='no mint repeats'
+            return False
         if tx in txs:
             out[0]+='no duplicates'
             return False
@@ -99,7 +102,7 @@ def add_block(block_pair, recent_hashes, DB={}):
         return sorted(mylist)[len(mylist) / 2]
 
     def block_check(block, DB):
-        def log_(txt): pass #return tools.log(txt)
+        def log_(txt): return tools.log(txt)
         def tx_check(txs):
             if len(txs)==0: return False
             start = copy.deepcopy(txs)
@@ -146,7 +149,7 @@ def add_block(block_pair, recent_hashes, DB={}):
             return False
         if length >= 0:
             prev_block=tools.db_get(length)
-            to_hash={'prev':prev_block['block_hash'], 'txs':block['txs']}
+            to_hash={'prev_hash':prev_block['block_hash'], 'txs':block['txs']}
             if not block['block_hash']==tools.det_hash(to_hash):
                 log_('det hash error')
                 return False
@@ -171,6 +174,7 @@ def add_block(block_pair, recent_hashes, DB={}):
         #take money from the creator
         tools.local_put('length', block['length'])
         orphans = tools.local_get('txs')
+        orphans=filter(lambda t: t['type']!='mint', orphans)
         tools.local_put('txs', [])
         for tx in block['txs']:
             try:
@@ -210,6 +214,7 @@ def delete_block(DB):
         pass
     block = tools.db_get(length, DB)
     orphans = tools.local_get('txs')
+    orphans=filter(lambda t: t['type']!='mint', orphans)
     tools.local_put('txs', [])
     for tx in block['txs']:
         orphans.append(tx)
@@ -223,11 +228,6 @@ def delete_block(DB):
     tools.db_delete(length, DB)
     length-=1
     tools.local_put('length', length)
-    if length == -1:
-        tools.local_put('diffLength', '0')
-    else:
-        block = tools.db_get(length, DB)
-        tools.local_put('diffLength', block['diffLength'])
     for orphan in orphans:
         add_tx(orphan, DB)
     #while tools.db_get('length')!=length:

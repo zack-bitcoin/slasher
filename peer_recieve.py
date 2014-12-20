@@ -14,9 +14,7 @@ def recieve_peer(dic, DB):
         tools.add_peer(dic['peer'])
 def blockCount(dic, DB):
     length = tools.local_get('length')
-    d='0'
-    if length >= 0: d=tools.local_get('diffLength')
-    return {'length': length, 'diffLength': d}
+    return {'length': length}
 def rangeRequest(dic, DB):
     ran = dic['range']
     out = []

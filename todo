@@ -1,8 +1,4 @@
-Things might work simpler if we re-introduce the mint transaction type. that way fee_check will work how we expect. Then we don't have to sign the block.
-
-secret+salt junk needs to be programmed.
-
-combine the good parts from LIF and old random number generator.
+We cannot share blocks right now because the root_hash of the patricia tree isn't the same.
 
 Maybe the blockmaker should be rewarded for each signer he includes. This would disincentivize him from trying to cheat by including less signers.
 so say minsigners = 10, maxsigners = 15

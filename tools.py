@@ -96,7 +96,7 @@ def adjust_list(location, pubkey, remove, item, DB, add_block):
 def symmetric_put(id_, dic, DB, add_block):
     if add_block: db_put(id_, dic, DB)
     else: db_delete(id_, DB)
-def empty_peer(): return {'blacklist':0, 'lag':40.0, 'length':0, 'diffLength':"0"}
+def empty_peer(): return {'blacklist':0, 'lag':40.0, 'length':0}
 def peer_split(peer):
     a=peer.split(':')
     a[1]=int(a[1])
@@ -218,7 +218,10 @@ def db_verify(root, key, proof): return s_to_db({'type':'verify', 'args':[root, 
 def db_root(): return s_to_db({'type':'root', 'args':[]})
 def fork_check(newblocks, DB, length, block):
     recent_hash = det_hash(block)
-    their_hashes = map(lambda x: x['prev'] if x['length']>0 else 0, newblocks)+[det_hash(newblocks[-1])]
+    if len(newblocks)<0:
+        return False
+    #log('newblocks: ' +str(newblocks))
+    their_hashes = map(lambda x: x['block_hash'] if x['length']>0 else 0, newblocks)+[det_hash(newblocks[-1])]
     b=(recent_hash not in their_hashes) and length>newblocks[0]['length']-1 and length<newblocks[-1]['length']
     return b
 if __name__ == "__main__":

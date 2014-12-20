@@ -16,7 +16,7 @@ def main(brainwallet, pubkey_flag=False):
         pubkey=brainwallet
     a=tools.empty_peer()
     b=custom.peers
-    b[tools.getPublicIp()+':'+str(custom.port)]=a
+    #b[tools.getPublicIp()+':'+str(custom.port)]=a
     processes= [
         {'target': db.main,
          'args': (DB['heart_queue'], custom.database_name, tools.log, custom.database_port),
