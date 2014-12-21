@@ -54,8 +54,8 @@ def mint_verify(tx, txs, out, DB):
         return False
     amount=tools.mint_cost(txs)
     if tx['amount']>amount:
-        tools.log('have: ' +str(tx['amount']))
-        tools.log('need: ' +str(amount))
+        #tools.log('have: ' +str(tx['amount']))
+        #tools.log('need: ' +str(amount))
         tools.log('that amount is too big')
         return False
     return True
@@ -129,7 +129,7 @@ def sign_verify(tx, txs, out, DB):#check the validity of a transaction of type s
         out[0]+='signature check'
         return False
     length=tools.local_get('length')
-    if tx['on_block']!=length+1:
+    if int(tx['on_block'])!=int(length+1):
         out[0]+='this tx is for the wrong block. have '+str(length+1) +' need: ' +str(tx['on_block'])
         
         return False
@@ -255,7 +255,7 @@ def reward(tx, DB, add_block):
     length=tools.db_get('length')
     adjust_string(['secrets', tx['on_block'], 'slashed'], address, False, True, DB, add_block)
     adjust_dict(['entropy'], address, False, {str(tx['on_block']):{'power':tx['jackpots'],'vote':tx['reveal']}}, DB, add_block)
-    adjust_int(['amount'], address, tx['amount'], DB, add_block)
+    adjust_int(['amount'], address, tx['amount'], DB, add_block)#relative_reward(on_block)+signer_bond
 update = {'mint':mint,
           'spend':spend,
           'sign':sign,

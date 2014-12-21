@@ -10,6 +10,8 @@ def create_sign_tx():
     l=max(-1, on_block-1-(custom.long_time*2-custom.medium_time))
     election_block=tools.db_get(l+1)
     proof=tools.local_get('balance_proofs'+str(l))
+    if 'root_hash' not in election_block:
+        return({'error':'database changed'})
     a=tools.db_verify(election_block['root_hash'], address, proof)
     if a==False:
         #tools.log('election block: ' +str(election_block))
@@ -36,7 +38,11 @@ def create_sign_tx():
             tools.local_put('secrets', secrets)
         tx['secret_hash']=tools.det_hash(secret)
         if on_block>0:
-            tx['prev']=tools.db_get(on_block-1)['block_hash']
+            block=tools.db_get(on_block-1)
+            if 'amount' in block and block['amount']==0:
+                return({'error':'database changed'})
+            #tools.log('on_block: ' +str(a))
+            tx['prev']=block['block_hash']
     else:
         tx= {'error':'no jackpots'}
     return tx
@@ -45,7 +51,7 @@ def mainloop():
     while True:
         if tools.local_get('stop'):
             return
-        time.sleep(0.1)
+        time.sleep(1)
         txs=tools.local_get('txs')
         address=tools.local_get('address')
         txs=filter(lambda x: address==tools.addr(x), txs)
@@ -55,5 +61,5 @@ def mainloop():
             #tools.log('tx: ' +str(tx))
             api.easy_add_transaction(tx)
         else:
-            time.sleep(0.2)
+            time.sleep(1)
 

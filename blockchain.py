@@ -101,7 +101,6 @@ def add_block(block_pair, recent_hashes, DB={}):
     def block_check(block, DB):
         def log_(txt): pass #return tools.log(txt)
         def tx_check(txs):
-            if len(txs)==0: return False
             start = copy.deepcopy(txs)
             out = []
             start_copy = []
@@ -110,7 +109,7 @@ def add_block(block_pair, recent_hashes, DB={}):
                 if start == []:
                     return False  # Block passes this test
                 start_copy = copy.deepcopy(start)
-                if transactions.tx_check[start[0]['type']](start[0], out, invalid_because, DB):#might need to change -1 to 0
+                if transactions.tx_check[start[0]['type']](start[0], out, invalid_because, DB):
                     out.append(start.pop())
                 else:
                     tools.log('invalid tx: '+str(invalid_because[0]))
@@ -126,6 +125,8 @@ def add_block(block_pair, recent_hashes, DB={}):
             return False
         if int(block['length']) != int(length) + 1:
             log_('wrong longth')
+            log_('have: '+str(int(length)+1))
+            log_('need: '+str(block['length']))
             return False
         block_creator_address=tools.addr(block)
         mint_address=tools.addr(filter(lambda t: t['type']=='mint', block['txs'])[0])
@@ -236,19 +237,22 @@ def f(blocks_queue, txs_queue):
                 tools.log('suggestions ' + s)
                 tools.log(exc)
     while True:
-        time.sleep(0.1)
-        l=tools.local_get('length')+1
-        v=range(l-10, l)
-        v=filter(lambda x: x>0, v)
-        v=map(lambda x: tools.db_get(x), v)
-        v=map(lambda x: x['block_hash'], v)
-        if tools.local_get('stop'):
-            tools.dump_out(blocks_queue)
-            tools.dump_out(txs_queue)
-            return
-        while not bb() or not tb():
-            ff(blocks_queue, lambda x: add_block(x, v), bb, 'block')
-            ff(txs_queue, add_tx, tb, 'tx')
+        try:
+            time.sleep(0.1)
+            l=tools.local_get('length')+1
+            v=range(l-10, l)
+            v=filter(lambda x: x>0, v)
+            v=map(lambda x: tools.db_get(x), v)
+            v=map(lambda x: x['block_hash'], v)
+            if tools.local_get('stop'):
+                tools.dump_out(blocks_queue)
+                tools.dump_out(txs_queue)
+                return
+            while not bb() or not tb():
+                ff(blocks_queue, lambda x: add_block(x, v), bb, 'block')
+                ff(txs_queue, add_tx, tb, 'tx')
+        except Exception as exc:
+            tools.log(exc)
 import cProfile
 def main(DB): return f(DB["suggested_blocks"], DB["suggested_txs"])
 def profile(DB):

@@ -1,7 +1,7 @@
 """This is to make magic numbers easier to deal with."""
 import multiprocessing, os
-peers={'192.241.212.114:7900':{'port':7900, 'blacklist':0, 'length':0, 'lag':40.0}}#, 
-#'127.0.0.1:7900':{'port':7900, 'blacklist':0, 'length':0, 'lag':40.0}}
+peers={#'192.241.212.114:7900':{'port':7900, 'blacklist':0, 'length':0, 'lag':40.0}}#, 
+'127.0.0.1:7900':{'port':7900, 'blacklist':0, 'length':0, 'lag':40.0}}
 max_block_size=10#kilobytes
 current_loc=os.path.dirname(os.path.abspath(__file__))
 database_name = os.path.join(current_loc, 'DB')
@@ -14,6 +14,7 @@ all_money=21*10**15
 creator='115nxUddLmxijWskiz5znHxk1KdMZpS'#the password to make this address is: "brainwallet"
 max_key_length=6**4
 block_fee = 100000
+reward_blockmaker_vs_signers=lambda x: x/2
 signers=64
 default_spend_fee=1000
 # Lower limits on what the "time" tag in a block can say.

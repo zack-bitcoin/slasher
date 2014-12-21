@@ -240,17 +240,17 @@ if __name__ == "__main__":
     print(time.time()-time_0)
     '''
 def relative_reward(on_block, my_address):
+    #redistributes spend fees to signers based upon how big the signer_bond was
     one_before=on_block-1
     txs=db_get(on_block)['txs']
     sign_txs=filter(lambda t: t['type']=='sign', txs)
     my_sign_tx=filter(lambda t: addr(t)==my_address, sign_txs)[0]
-    spend_txs=filter(lambda t: t['type']=='spend', db_get(one_before)['txs'])
-    #log('spend_txs: ' +str(spend_txs))
     amounts=map(lambda t: int(t['amount']), sign_txs)
-    fees=map(lambda t: int(t['fee']), spend_txs)
     total_amount=sum(amounts)
-    total_fee=sum(fees)
-    return (my_sign_tx['amount']/total_amount)*total_fee
+    total_fee=block_reward(db_get(one_before)['txs'])
+    blockmaker_fee=custom.reward_blockmaker_vs_signers(total_fee)
+    fee=total_fee-blockmaker_fee
+    return (my_sign_tx['amount']/total_amount)*fee
 def winner(B, M, ran, my_address, j):
     b=hash2int('f'*64)*64*B/(200*M)
     a=hash2int(det_hash(str(ran)+str(my_address)+str([j])))
@@ -291,7 +291,10 @@ def det_random(length):
         out.append(mean(l))
     return det_hash(out)
 def mint_cost(txs):
+    return block_reward(txs)*custom.reward_blockmaker_vs_signers(block_reward(txs))-custom.block_fee
+
+def block_reward(txs):
     spends=filter(lambda x: x['type']=='spend', txs)
     fees=map(lambda t: int(t['fee']), spends)
-    return sum(fees)-custom.block_fee#maybe I should only get half the fees, and give other half to signers?
+    return sum(fees)
 
