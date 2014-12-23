@@ -53,6 +53,7 @@ def main(brainwallet, pubkey_flag=False):
     #def empty_memoized(): return({'blockcount':-3000})
     if not b:
         tools.local_put('length', -1)
+        tools.local_put('height', -1)
         tools.local_put('memoized_votes', {})
         tools.local_put('txs', [])
         tools.local_put('peers', {})

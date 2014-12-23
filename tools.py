@@ -222,6 +222,7 @@ def db_root(): return s_to_db({'type':'root', 'args':[]})
 def fork_check(newblocks, DB, length, block):
     #block is most recent block in our chain
     recent_hash = block['block_hash']#recent_hash
+    if length<=0: return False
     if len(newblocks)<1:
         return False
     #log('newblocks: ' +str(newblocks))
@@ -251,7 +252,7 @@ def relative_reward(on_block, my_address):
     blockmaker_fee=custom.reward_blockmaker_vs_signers(total_fee)
     fee=total_fee-blockmaker_fee
     return (my_sign_tx['amount']/total_amount)*fee
-def winner(B, M, ran, my_address, j):
+def winner(B, M, ran, my_address, j):#this doesn't work if we skip a block. It will say that the same people are signers whether we skip or not.
     b=hash2int('f'*64)*64*B/(200*M)
     a=hash2int(det_hash(str(ran)+str(my_address)+str([j])))
     return a<b
@@ -276,7 +277,7 @@ def entropy_bit(length):#too slow
 def det_random(length):
     #returns random seed to elect signers for the next block.
     def mean(l): return sorted(l)[len(l)/2]
-    ran=[]
+    ran=[]#this list should include a default value maybe 0, for every skipped height.
     for i in range(custom.medium_time/2):
         a=length-custom.long_time*2-custom.medium_time-i
         if a<0:
@@ -290,8 +291,10 @@ def det_random(length):
         ran=ran[a:]
         out.append(mean(l))
     return det_hash(out)
-def mint_cost(txs):
-    return block_reward(txs)*custom.reward_blockmaker_vs_signers(block_reward(txs))-custom.block_fee
+def mint_cost(txs, gap):#returns float???
+    a=custom.reward_blockmaker_vs_signers(block_reward(txs))
+    b=custom.block_fee(gap)
+    return a-b
 
 def block_reward(txs):
     spends=filter(lambda x: x['type']=='spend', txs)

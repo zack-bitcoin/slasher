@@ -43,19 +43,25 @@ def signature_check(tx):#verify that a transaction has a valid ECDSA signature o
     return True
 def mint_verify(tx, txs, out, DB):
     length=tools.local_get('length')
+    height=tools.local_get('height')
+    custom.block_fee(tx['height']-height)
+    gap=tx['height']-height
     for t in txs:
         if t['type']=='mint': 
             out[0]+='no mint repeats'
+    if not tools.fee_check(tx, txs, DB):
+        out[0]+='fee check error'
+        return False
     if tx['on_block']!=length+1:
         out[0]+='on wrong block'
         return False
     if len(filter(lambda x: x['type']=='mint', txs))>0:
         out[0]+='too many mints'
         return False
-    amount=tools.mint_cost(txs)
-    if tx['amount']>amount:
-        #tools.log('have: ' +str(tx['amount']))
-        #tools.log('need: ' +str(amount))
+    amount=tools.mint_cost(txs, gap)
+    if tx['amount']!=amount:
+        tools.log('have: ' +str(tx['amount']))
+        tools.log('need: ' +str(amount))
         tools.log('that amount is too big')
         return False
     return True
@@ -131,7 +137,6 @@ def sign_verify(tx, txs, out, DB):#check the validity of a transaction of type s
     length=tools.local_get('length')
     if int(tx['on_block'])!=int(length+1):
         out[0]+='this tx is for the wrong block. have '+str(length+1) +' need: ' +str(tx['on_block'])
-        
         return False
     if tx['on_block']>0:
         if not tx['prev']==tools.db_get(length)['block_hash']:

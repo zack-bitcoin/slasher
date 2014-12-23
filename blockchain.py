@@ -125,8 +125,6 @@ def add_block(block_pair, recent_hashes, DB={}):
             return False
         if int(block['length']) != int(length) + 1:
             log_('wrong longth')
-            log_('have: '+str(int(length)+1))
-            log_('need: '+str(block['length']))
             return False
         block_creator_address=tools.addr(block)
         mint_address=tools.addr(filter(lambda t: t['type']=='mint', block['txs'])[0])
@@ -169,6 +167,7 @@ def add_block(block_pair, recent_hashes, DB={}):
     if block_check(block, DB):
         #tools.log('add_block: ' + str(block))
         tools.db_put(block['length'], block, DB)
+        tools.local_put('height', block['height'])
         #take money from the creator
         tools.local_put('length', block['length'])
         orphans = tools.local_get('txs')
@@ -188,6 +187,7 @@ def add_block(block_pair, recent_hashes, DB={}):
             peers[peer]['blacklist']-=1
         tools.local_put('peers', peers)#root hash written on the block is for the state before that block
         tools.local_put('balance_proofs'+str(block['length']),tools.db_proof(tools.local_get('address')))
+        return
     elif not peer==False:
         peers=tools.local_get('peers')
         if peer not in peers:
@@ -221,6 +221,11 @@ def delete_block(DB):
     tools.db_delete(length, DB)
     length-=1
     tools.local_put('length', length)
+    if length>=0:
+        block=tools.db_get(length)
+        tools.local_put('height', filter(lambda t: t['type']=='mint', block['txs'])[0]['height'])
+    else:
+        tools.local_put('height', -1)
     for orphan in orphans:
         add_tx(orphan, DB)
     #while tools.db_get('length')!=length:

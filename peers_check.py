@@ -97,7 +97,7 @@ def main(peers, DB):
     map(tools.add_peer, peers)
     try:
         while True:
-            time.sleep(0.01)
+            time.sleep(0.5)#changing this from 0.01 to 0.5 made blocks load way faster. the add_block queue was getting overfilled.
             if tools.local_get('stop'): return
             main_once(DB)
     except Exception as exc:

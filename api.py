@@ -100,21 +100,22 @@ def stop_(DB, args):
     tools.local_put('stop', True)
     return('turning off all threads')
 def commands(DB, args): return sorted(Do.keys()+['start', 'new_address'])
-def default_block(n, txs=[]):
-    return({'length':int(n), 'txs':txs, 'version':custom.version, 'block_hash':''})
-def mint_tx():
+def default_block(n, h, txs=[]):
+    return({'length':int(n), 'height':h, 'txs':txs, 'version':custom.version, 'block_hash':''})
+def mint_tx(gap):
     txs=tools.local_get('txs')
-    spends=filter(lambda x: x['type']=='spend', txs)
-    fees=map(lambda t: int(t['fee']), spends)
-    amount=sum(fees)-custom.block_fee
+    height=tools.local_get('height')
     on_block=int(tools.local_get('length'))+1
-    return {'type':'mint', 'amount':tools.mint_cost(txs), 'on_block':on_block}
+    return {'type':'mint', 'amount':tools.mint_cost(txs, gap), 'on_block':on_block, 'height':height+gap}
 def buy_block(DB, args):
+    gap=1#this should be an argument. 
+    #we should also let the user delete as many blocks first as they want, to build a fork from a point in history.
     length=tools.local_get('length')
     prev_block=tools.db_get(length)
     txs=tools.local_get('txs')
     privkey=tools.local_get('privkey')
-    block=default_block(length+1, txs+[sign(mint_tx(), privkey)])
+    height=tools.local_get('height')
+    block=default_block(length+1, height+gap, txs+[sign(mint_tx(gap), privkey)])
     to_hash=''
     if length>-1: to_hash={'prev_hash':prev_block['block_hash'], 'txs':block['txs']}
     block['block_hash']=tools.det_hash(to_hash)
