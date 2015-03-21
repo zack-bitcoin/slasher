@@ -23,23 +23,23 @@ def sub_range_helper(total, attackers, p, q, times):
     if times<1: return 0
     a=choose(total, times)*(p**times)*(q**(total-times))
     return a+sub_range_helper(total, attackers, p, q, times-1)
-def prob_control_block(total, attackers, p):#if there are exactly total validators selected to control the next block and each has a attackers/100 probability of being an attacker, then this is the probability they will control >p% of the next block?
+def prob_control_block(total, attackers, p):#if there are exactly total validators selected to control the next block and each has a attackers/100 probability of being an attacker, then this is the probability they will control >p% of the next block.
     return 1-(sub_range(total, attackers, p))
 def gamma_control_block(total, attackers, p):# if each person has a small possibility to be a validator, and there are total validators on average, and attackers/100 is the percentage of people who want to attack, then this outputs the probability that the attackers will control >p of the next block
     a=0
-    rounds=10000
+    rounds=5000
     for i in range(rounds):
         a+=prob_control_block(int(numpy.random.gamma(total, 1)), attackers, p)
     return(a/rounds)
 def gamma_freeze(attackers):
-    return gamma_control_block(100, attackers, 1.0/3)
+    return gamma_control_block(100, 100-attackers, 2.0/3)
 def gamma_fork(attackers):
     return gamma_control_block(100, attackers, 2.0/3)
 def test():
-    print("given that X% of the validators want to maintain a fork, how often will they control more than 67% of the next block. Given 100 validators total selected")
+    print("given that X% of the validators want to maintain a fork, how often will they control more than 67% of the next block. 100 validators total selected")
     print("assuming that a gap of size 50 is too big to jump")
-    print(gamma_freeze(46))#0.98
-    print("this shows that any 46% of validators could freeze the network")
+    print(gamma_freeze(49.7))#0.02
+    print("this shows that any 49.7% of validators could freeze the network")
     print(gamma_fork(50.3))#0.02
     print("this shows that any 50.3% of validators could maintain a fork the network")
 
