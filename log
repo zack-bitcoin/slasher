@@ -1,0 +1,10 @@
+INFO:root:custom.current_loc: /home/zack/Hacking/slasher
+INFO:root:starting db
+INFO:root:stop: False
+INFO:root:starting auto_signer
+INFO:root:starting auto_signer
+INFO:root:starting blockchain
+INFO:root:starting api
+INFO:root:starting peers_check
+INFO:root:starting peer_recieve
+INFO:root:stop: False
